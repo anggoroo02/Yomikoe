@@ -26,3 +26,7 @@ Workflow
 3. Implement only the requested scope.
 4. Stop.
 5. Wait for Architecture Review.
+
+Never use conversation history as the source of truth.
+
+Only use repository artifacts referenced by the Engineering Task.

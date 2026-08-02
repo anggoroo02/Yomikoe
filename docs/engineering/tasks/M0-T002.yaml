@@ -1,0 +1,63 @@
+schema_version: 1
+
+id: M0-T002
+
+title: Initialize Documentation Repository
+
+status: ready
+
+milestone: M0
+
+phase: Repository Foundation
+
+estimated_scope: XS
+
+references:
+  specifications:
+    - M0-S001
+  architecture:
+    - docs/architecture/01-foundation/repository-structure.md
+  standards:
+    - docs/development/engineering-standards.md
+    - docs/architecture/01-foundation/architectural-rules.md
+
+depends_on:
+  - M0-T001
+
+allowed_paths:
+  - docs/**
+
+forbidden_paths:
+  - src/**
+  - tests/**
+  - tools/**
+  - scripts/**
+  - examples/**
+  - assets/**
+
+artifacts:
+  consumes:
+    - Repository Structure Specification
+    - Existing architecture documents
+
+  produces:
+    - Organized documentation repository
+
+deliverables:
+  - All approved architecture documents are placed in their final locations.
+  - Documentation directory structure matches the repository specification.
+  - Internal document references remain consistent.
+  - Placeholder README files are preserved where required.
+
+acceptance:
+  - No architecture document remains outside its designated location.
+  - Documentation hierarchy matches the approved repository structure.
+  - No source code is introduced.
+  - No repository structure changes are made.
+  - Repository is ready for M0-T003.
+
+definition_of_done:
+  - Deliverables completed.
+  - Acceptance criteria satisfied.
+  - Architecture unchanged.
+  - Ready for Architecture Review.

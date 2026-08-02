@@ -1,0 +1,50 @@
+id: M0-S001
+
+title: Repository Structure Specification
+
+status: accepted
+
+version: 1
+
+top_level:
+
+  - docs
+  - src
+  - tests
+  - tools
+  - scripts
+  - examples
+  - assets
+
+documentation:
+
+  architecture:
+
+    - 01-foundation
+    - 02-domain
+    - 03-core
+    - 04-governance
+
+  adr:
+
+  engineering:
+
+    specifications:
+
+    tasks:
+
+    templates:
+
+  development:
+
+  reference:
+
+rules:
+
+  - Empty directories shall contain .gitkeep.
+
+  - Each documentation section shall contain README.md.
+
+  - Architecture documents shall reside only under docs/architecture.
+
+  - Engineering Tasks shall reside only under docs/engineering/tasks.
