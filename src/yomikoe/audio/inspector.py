@@ -1,8 +1,9 @@
 from pathlib import Path
 from mutagen import File as MutagenFile
+from yomikoe.audio.models import AudioMetadata
 
 
-def inspect_audio(audio_file: Path) -> dict[str, str | int | float | None]:
+def inspect_audio(audio_file: Path) -> AudioMetadata:
     """Inspect basic information about an audio file."""
     audio = None
     duration = None
@@ -15,10 +16,10 @@ def inspect_audio(audio_file: Path) -> dict[str, str | int | float | None]:
         # TODO: Catch specific Mutagen exceptions instead of Exception.
         pass
 
-    return {
-        "filename": audio_file.name,
-        "path": str(audio_file.resolve()),
-        "size_bytes": audio_file.stat().st_size,
-        "extension": audio_file.suffix.lower(),
-        "duration_seconds": duration,
-    }
+    return AudioMetadata(
+        filename=audio_file.name,
+        path=str(audio_file.resolve()),
+        size_bytes=audio_file.stat().st_size,
+        extension=audio_file.suffix.lower(),
+        duration_seconds=duration,
+    )
