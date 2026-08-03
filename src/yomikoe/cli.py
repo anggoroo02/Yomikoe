@@ -1,4 +1,5 @@
 from pathlib import Path
+from yomikoe.audio import inspect_audio
 
 import typer
 
@@ -31,7 +32,13 @@ def transcribe(audio_file: Path):
     if not audio_file.is_file():
         exit_with_error(f"Error: Path is not a file: {audio_file}")
 
-    typer.echo(f"Input file: {audio_file}")
+    metadata = inspect_audio(audio_file)
+
+    typer.echo(f"File      : {metadata['filename']}")
+    typer.echo(f"Extension : {metadata['extension']}")
+    typer.echo(f"Size      : {metadata['size_bytes']} bytes")
+
+    typer.echo()
     typer.echo("Transcription engine is not implemented yet.")
 
 
