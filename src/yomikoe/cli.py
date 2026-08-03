@@ -3,11 +3,8 @@ from pathlib import Path
 import typer
 
 from yomikoe import __version__
-from yomikoe.audio import (
-    UnsupportedAudioFormatError,
-    load_audio,
-)
-from yomikoe.pipeline import transcribe as run_pipeline
+from yomikoe.audio import UnsupportedAudioFormatError
+from yomikoe.pipeline import transcribe_audio
 
 app = typer.Typer(
     name="yomikoe",
@@ -50,22 +47,22 @@ def transcribe(audio_file: Path):
         exit_with_error(f"Error: Path is not a file: {audio_file}")
 
     try:
-        loaded_audio = load_audio(audio_file)
+        pipeline_result = transcribe_audio(audio_file)
+
     except UnsupportedAudioFormatError as exc:
         exit_with_error(str(exc))
 
-    loaded_audio = load_audio(audio_file)
-    metadata = loaded_audio["metadata"]
+    pipeline_result = transcribe_audio(audio_file)
+
+    metadata = pipeline_result["audio"]["metadata"]
+    result = pipeline_result["transcription"]
 
     typer.echo(f"File      : {metadata['filename']}")
     typer.echo(f"Extension : {metadata['extension']}")
     typer.echo(f"Size      : {metadata['size_bytes']} bytes")
     typer.echo(f"Duration  : {format_duration(metadata['duration_seconds'])}")
 
-    typer.echo()
-    typer.echo("Transcription engine is not implemented yet.")
-
-    result = run_pipeline(audio_file)
+    result = transcribe_audio(audio_file)["transcription"]
 
     typer.echo()
     typer.echo("Engine    : Dummy")

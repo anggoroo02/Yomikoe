@@ -1,3 +1,5 @@
-from .transcriber import transcribe
+from .transcriber import transcribe_audio
 
-__all__ = ["transcribe"]
+__all__ = [
+    "transcribe_audio",
+]
