@@ -1,3 +1,4 @@
+from .dummy import DummyTranscriptionEngine
 from .exceptions import EngineError
 from .interface import TranscriptionEngine
 from .models import (
@@ -6,6 +7,7 @@ from .models import (
 )
 
 __all__ = [
+    "DummyTranscriptionEngine",
     "EngineError",
     "TranscriptionEngine",
     "TranscriptionResult",

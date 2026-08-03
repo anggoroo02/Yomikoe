@@ -7,6 +7,7 @@ from yomikoe.audio import (
     UnsupportedAudioFormatError,
     load_audio,
 )
+from yomikoe.pipeline import transcribe as run_pipeline
 
 app = typer.Typer(
     name="yomikoe",
@@ -63,6 +64,13 @@ def transcribe(audio_file: Path):
 
     typer.echo()
     typer.echo("Transcription engine is not implemented yet.")
+
+    result = run_pipeline(audio_file)
+
+    typer.echo()
+    typer.echo("Engine    : Dummy")
+    typer.echo(f"Language  : {result.language}")
+    typer.echo(f"Segments  : {len(result.segments)}")
 
 
 if __name__ == "__main__":
