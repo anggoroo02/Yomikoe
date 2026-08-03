@@ -1,5 +1,7 @@
 from pathlib import Path
+
 from mutagen import File as MutagenFile
+
 from yomikoe.audio.models import AudioMetadata
 
 

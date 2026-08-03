@@ -1,13 +1,12 @@
 from pathlib import Path
-from yomikoe.audio import (
-    UnsupportedAudioFormatError,
-    load_audio,
-)
 
 import typer
 
 from yomikoe import __version__
-
+from yomikoe.audio import (
+    UnsupportedAudioFormatError,
+    load_audio,
+)
 
 app = typer.Typer(
     name="yomikoe",
@@ -32,6 +31,7 @@ def format_duration(seconds: float | None) -> str:
     secs = total_seconds % 60
 
     return f"{hours:02}:{minutes:02}:{secs:02}"
+
 
 @app.command()
 def version():
@@ -59,9 +59,7 @@ def transcribe(audio_file: Path):
     typer.echo(f"File      : {metadata['filename']}")
     typer.echo(f"Extension : {metadata['extension']}")
     typer.echo(f"Size      : {metadata['size_bytes']} bytes")
-    typer.echo(
-        f"Duration  : {format_duration(metadata['duration_seconds'])}"
-    )
+    typer.echo(f"Duration  : {format_duration(metadata['duration_seconds'])}")
 
     typer.echo()
     typer.echo("Transcription engine is not implemented yet.")

@@ -9,6 +9,7 @@ class AudioMetadata(TypedDict):
     extension: str
     duration_seconds: float | None
 
+
 class LoadedAudio(TypedDict):
     path: Path
     metadata: AudioMetadata

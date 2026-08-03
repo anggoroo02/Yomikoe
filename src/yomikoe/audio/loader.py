@@ -12,10 +12,9 @@ SUPPORTED_AUDIO_EXTENSIONS = {
     ".ogg",
 }
 
+
 def supported_audio_formats() -> str:
-    return "\n".join(
-        f"- {extension}" for extension in SUPPORTED_AUDIO_EXTENSIONS
-    )
+    return "\n".join(f"- {extension}" for extension in SUPPORTED_AUDIO_EXTENSIONS)
 
 
 def load_audio(audio_file: Path) -> LoadedAudio:
@@ -23,10 +22,6 @@ def load_audio(audio_file: Path) -> LoadedAudio:
     extension = audio_file.suffix.lower()
 
     if extension not in SUPPORTED_AUDIO_EXTENSIONS:
-        supported_formats = "\n".join(
-            f"- {ext}" for ext in sorted(SUPPORTED_AUDIO_EXTENSIONS)
-        )
-
         raise UnsupportedAudioFormatError(
             f"Unsupported audio format: {extension}\n\n"
             f"Supported formats:\n"

@@ -1,12 +1,7 @@
+from .exceptions import AudioError, AudioLoadError, UnsupportedAudioFormatError
 from .inspector import inspect_audio
 from .loader import load_audio
-
-from .models import AudioMetadata
-from .models import LoadedAudio
-
-from .exceptions import AudioError
-from .exceptions import AudioLoadError
-from .exceptions import UnsupportedAudioFormatError
+from .models import AudioMetadata, LoadedAudio
 
 __all__ = [
     "inspect_audio",
