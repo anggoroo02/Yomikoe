@@ -16,6 +16,17 @@ def exit_with_error(message: str) -> None:
     typer.echo(message, err=True)
     raise typer.Exit(code=1)
 
+def format_duration(seconds: float | None) -> str:
+    """Format duration in HH:MM:SS."""
+    if seconds is None:
+        return "Unknown"
+
+    total_seconds = int(seconds)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    secs = total_seconds % 60
+
+    return f"{hours:02}:{minutes:02}:{secs:02}"
 
 @app.command()
 def version():
@@ -37,6 +48,9 @@ def transcribe(audio_file: Path):
     typer.echo(f"File      : {metadata['filename']}")
     typer.echo(f"Extension : {metadata['extension']}")
     typer.echo(f"Size      : {metadata['size_bytes']} bytes")
+    typer.echo(
+        f"Duration  : {format_duration(metadata['duration_seconds'])}"
+    )
 
     typer.echo()
     typer.echo("Transcription engine is not implemented yet.")
