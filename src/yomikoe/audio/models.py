@@ -1,4 +1,6 @@
+from pathlib import Path
 from typing import TypedDict
+
 
 class AudioMetadata(TypedDict):
     filename: str
@@ -6,3 +8,7 @@ class AudioMetadata(TypedDict):
     size_bytes: int
     extension: str
     duration_seconds: float | None
+
+class LoadedAudio(TypedDict):
+    path: Path
+    metadata: AudioMetadata

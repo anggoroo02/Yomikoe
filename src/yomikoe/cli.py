@@ -1,9 +1,13 @@
 from pathlib import Path
-from yomikoe.audio import inspect_audio
+from yomikoe.audio import (
+    UnsupportedAudioFormatError,
+    load_audio,
+)
 
 import typer
 
 from yomikoe import __version__
+
 
 app = typer.Typer(
     name="yomikoe",
@@ -15,6 +19,7 @@ def exit_with_error(message: str) -> None:
     """Print an error message and exit with a non-zero status."""
     typer.echo(message, err=True)
     raise typer.Exit(code=1)
+
 
 def format_duration(seconds: float | None) -> str:
     """Format duration in HH:MM:SS."""
@@ -43,7 +48,13 @@ def transcribe(audio_file: Path):
     if not audio_file.is_file():
         exit_with_error(f"Error: Path is not a file: {audio_file}")
 
-    metadata = inspect_audio(audio_file)
+    try:
+        loaded_audio = load_audio(audio_file)
+    except UnsupportedAudioFormatError as exc:
+        exit_with_error(str(exc))
+
+    loaded_audio = load_audio(audio_file)
+    metadata = loaded_audio["metadata"]
 
     typer.echo(f"File      : {metadata['filename']}")
     typer.echo(f"Extension : {metadata['extension']}")
