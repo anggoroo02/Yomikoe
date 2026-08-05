@@ -9,6 +9,7 @@ license = { text = "MIT" }
 dependencies = [
     "typer>=0.16.0",
     "mutagen>=1.47.0",
+    "faster-whisper>=1.1.0",
 ]
 
 [project.scripts]

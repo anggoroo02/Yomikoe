@@ -1,5 +1,6 @@
 from .dummy import DummyTranscriptionEngine
 from .exceptions import EngineError
+from .faster_whisper import FasterWhisperEngine
 from .interface import TranscriptionEngine
 from .models import (
     TranscriptionResult,
@@ -12,4 +13,5 @@ __all__ = [
     "TranscriptionEngine",
     "TranscriptionResult",
     "TranscriptionSegment",
+    "FasterWhisperEngine",
 ]
