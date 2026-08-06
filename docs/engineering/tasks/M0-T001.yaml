@@ -1,0 +1,68 @@
+schema_version: 1
+
+id: M0-T001
+
+title: Create Repository Skeleton
+
+status: ready
+
+milestone: M0
+
+phase: Repository Foundation
+
+estimated_scope: XS
+
+references:
+  specifications:
+    - M0-S001
+
+  architecture:
+    - Repository Structure
+
+  development:
+    - Engineering Standards
+    - Architectural Rules
+
+depends_on:
+  - M0-S001
+
+allowed_paths:
+  - docs/**
+  - engineering/**
+  - src/**
+  - tests/**
+  - tools/**
+  - scripts/**
+  - examples/**
+  - assets/**
+
+forbidden_paths:
+  - "**/*.py"
+  - "**/*.rs"
+  - "**/*.go"
+  - "**/*.cpp"
+  - "**/*.c"
+
+artifacts:
+
+  consumes:
+    - Repository Structure Specification
+
+  produces:
+    - Repository Skeleton
+
+deliverables:
+  - Repository directory structure created.
+  - Placeholder files added where necessary.
+  - Empty directories preserved.
+
+acceptance:
+  - Repository structure matches M0-S001.
+  - No implementation source code exists.
+  - No dependencies introduced.
+  - Repository ready for M0-T002.
+
+definition_of_done:
+  - Architecture review passed.
+  - Acceptance criteria satisfied.
+  - No architecture violations.

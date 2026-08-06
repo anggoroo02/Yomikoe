@@ -1,0 +1,34 @@
+[project]
+name = "yomikoe"
+version = "0.1.0-dev0"
+description = "Offline Japanese Audio Subtitle Generator"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+dependencies = [
+    "typer>=0.16.0",
+    "mutagen>=1.47.0",
+    "faster-whisper>=1.1.0",
+]
+
+[project.scripts]
+yomikoe = "yomikoe.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/yomikoe"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+]
