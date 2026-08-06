@@ -4,6 +4,7 @@ import typer
 
 from yomikoe import __version__
 from yomikoe.audio import UnsupportedAudioFormatError
+from yomikoe.engines import FasterWhisperEngine
 from yomikoe.pipeline import transcribe_audio
 from yomikoe.subtitle import (
     generate_subtitle,
@@ -40,13 +41,14 @@ def version():
     """Show application version."""
     typer.echo(f"Yomikoe {__version__}")
 
-
-@app.command()
 def get_output_path(audio_file: Path) -> Path:
     """Return the default subtitle output path."""
     return audio_file.with_suffix(".srt")
+
+@app.command()
 def transcribe(audio_file: Path):
     """Transcribe an audio file."""
+
     if not audio_file.exists():
         exit_with_error(f"Error: File not found: {audio_file}")
 
@@ -54,19 +56,24 @@ def transcribe(audio_file: Path):
         exit_with_error(f"Error: Path is not a file: {audio_file}")
 
     try:
-        pipeline_result = transcribe_audio(audio_file)
+        engine = FasterWhisperEngine(
+            device="cpu",
+        )
+        pipeline_result = transcribe_audio(
+            audio_file,
+            engine,
+        )
 
     except UnsupportedAudioFormatError as exc:
         exit_with_error(str(exc))
 
     metadata = pipeline_result["audio"]["metadata"]
+    result = pipeline_result["transcription"]
 
     typer.echo(f"File      : {metadata['filename']}")
     typer.echo(f"Extension : {metadata['extension']}")
     typer.echo(f"Size      : {metadata['size_bytes']} bytes")
     typer.echo(f"Duration  : {format_duration(metadata['duration_seconds'])}")
-
-    result = transcribe_audio(audio_file)["transcription"]
 
     subtitle = generate_subtitle(result)
 
@@ -80,7 +87,9 @@ def transcribe(audio_file: Path):
     )
 
     typer.echo()
-    typer.echo("Engine     : Faster-Whisper")
+    typer.echo(
+        f"Engine    : {engine.__class__.__name__}"
+    )
     typer.echo(f"Language  : {result.language}")
     typer.echo(f"Segments  : {len(result.segments)}")
     typer.echo(f"Output    : {output_file}")
