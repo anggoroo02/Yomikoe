@@ -1,7 +1,10 @@
+from collections.abc import Callable
+
 from faster_whisper import WhisperModel
 
 from yomikoe.audio import LoadedAudio
 from yomikoe.engines.models import (
+    TranscriptionProgress,
     TranscriptionResult,
     TranscriptionSegment,
 )
@@ -24,9 +27,15 @@ class FasterWhisperEngine:
 
     def transcribe(
         self,
-        audio: LoadedAudio,
+        loaded_audio: LoadedAudio,
+        progress_callback: Callable[
+            [TranscriptionProgress],
+            None,
+        ]
+        | None = None,
     ) -> TranscriptionResult:
-        audio_path = str(audio["path"])
+        audio_path = str(loaded_audio["path"])
+        duration = loaded_audio["metadata"]["duration_seconds"]
 
         segments, info = self._model.transcribe(audio_path)
 
@@ -40,6 +49,14 @@ class FasterWhisperEngine:
                     text=segment.text.strip(),
                 )
             )
+
+            if progress_callback is not None and duration is not None:
+                progress_callback(
+                    TranscriptionProgress(
+                        current_seconds=segment.end,
+                        total_seconds=duration,
+                    )
+                )
 
         return TranscriptionResult(
             language=info.language,

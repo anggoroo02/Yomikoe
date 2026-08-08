@@ -4,7 +4,7 @@ import typer
 
 from yomikoe import __version__
 from yomikoe.audio import UnsupportedAudioFormatError
-from yomikoe.engines import FasterWhisperEngine
+from yomikoe.engines import FasterWhisperEngine, TranscriptionProgress
 from yomikoe.pipeline import transcribe_audio
 from yomikoe.subtitle import (
     generate_subtitle,
@@ -41,12 +41,14 @@ def version():
     """Show application version."""
     typer.echo(f"Yomikoe {__version__}")
 
+
 def get_output_path(audio_file: Path) -> Path:
     """Return the default subtitle output path."""
     return audio_file.with_suffix(".srt")
 
+
 @app.command()
-def transcribe(audio_file: Path):
+def transcribe(audio_file: Path, verbose: bool = False):
     """Transcribe an audio file."""
 
     if not audio_file.exists():
@@ -55,6 +57,30 @@ def transcribe(audio_file: Path):
     if not audio_file.is_file():
         exit_with_error(f"Error: Path is not a file: {audio_file}")
 
+    progress_displayed = False
+    progress_total_seconds: float | None = None
+
+    def display_progress(progress: TranscriptionProgress) -> None:
+        nonlocal progress_displayed, progress_total_seconds
+
+        if progress.total_seconds <= 0:
+            return
+
+        percentage = int(progress.current_seconds / progress.total_seconds * 100)
+        percentage = max(0, min(percentage, 100))
+        if verbose:
+            message = (
+                f"Transcribing... {percentage}% | "
+                f"{format_duration(progress.current_seconds)} / "
+                f"{format_duration(progress.total_seconds)}"
+            )
+        else:
+            message = f"Transcribing... {percentage}%"
+
+        typer.echo(f"\r{message}", nl=False)
+        progress_displayed = True
+        progress_total_seconds = progress.total_seconds
+
     try:
         engine = FasterWhisperEngine(
             device="cpu",
@@ -62,10 +88,21 @@ def transcribe(audio_file: Path):
         pipeline_result = transcribe_audio(
             audio_file,
             engine,
+            progress_callback=display_progress,
         )
 
     except UnsupportedAudioFormatError as exc:
         exit_with_error(str(exc))
+
+    if progress_displayed:
+        if verbose and progress_total_seconds is not None:
+            typer.echo(
+                "\rTranscribing... 100% | "
+                f"{format_duration(progress_total_seconds)} / "
+                f"{format_duration(progress_total_seconds)}"
+            )
+        else:
+            typer.echo("\rTranscribing... 100%")
 
     metadata = pipeline_result["audio"]["metadata"]
     result = pipeline_result["transcription"]
@@ -87,9 +124,7 @@ def transcribe(audio_file: Path):
     )
 
     typer.echo()
-    typer.echo(
-        f"Engine    : {engine.__class__.__name__}"
-    )
+    typer.echo(f"Engine    : {engine.__class__.__name__}")
     typer.echo(f"Language  : {result.language}")
     typer.echo(f"Segments  : {len(result.segments)}")
     typer.echo(f"Output    : {output_file}")
