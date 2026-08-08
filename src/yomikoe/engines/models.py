@@ -28,3 +28,10 @@ class TranscriptionResult:
 
     language: str
     segments: list[TranscriptionSegment] = field(default_factory=list)
+
+@dataclass(slots=True)
+class TranscriptionProgress:
+    """Represent transcription progress."""
+
+    current_seconds: float
+    total_seconds: float
