@@ -48,7 +48,7 @@ def get_output_path(audio_file: Path) -> Path:
 
 
 @app.command()
-def transcribe(audio_file: Path):
+def transcribe(audio_file: Path, verbose: bool = False):
     """Transcribe an audio file."""
 
     if not audio_file.exists():
@@ -58,17 +58,28 @@ def transcribe(audio_file: Path):
         exit_with_error(f"Error: Path is not a file: {audio_file}")
 
     progress_displayed = False
+    progress_total_seconds: float | None = None
 
     def display_progress(progress: TranscriptionProgress) -> None:
-        nonlocal progress_displayed
+        nonlocal progress_displayed, progress_total_seconds
 
         if progress.total_seconds <= 0:
             return
 
         percentage = int(progress.current_seconds / progress.total_seconds * 100)
         percentage = max(0, min(percentage, 100))
-        typer.echo(f"\rTranscribing... {percentage}%", nl=False)
+        if verbose:
+            message = (
+                f"Transcribing... {percentage}% | "
+                f"{format_duration(progress.current_seconds)} / "
+                f"{format_duration(progress.total_seconds)}"
+            )
+        else:
+            message = f"Transcribing... {percentage}%"
+
+        typer.echo(f"\r{message}", nl=False)
         progress_displayed = True
+        progress_total_seconds = progress.total_seconds
 
     try:
         engine = FasterWhisperEngine(
@@ -84,7 +95,14 @@ def transcribe(audio_file: Path):
         exit_with_error(str(exc))
 
     if progress_displayed:
-        typer.echo("\rTranscribing... 100%")
+        if verbose and progress_total_seconds is not None:
+            typer.echo(
+                "\rTranscribing... 100% | "
+                f"{format_duration(progress_total_seconds)} / "
+                f"{format_duration(progress_total_seconds)}"
+            )
+        else:
+            typer.echo("\rTranscribing... 100%")
 
     metadata = pipeline_result["audio"]["metadata"]
     result = pipeline_result["transcription"]
