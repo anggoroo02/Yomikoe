@@ -1,8 +1,9 @@
+from collections.abc import Callable
 from typing import Protocol
 
 from yomikoe.audio import LoadedAudio
 
-from .models import TranscriptionResult
+from .models import TranscriptionProgress, TranscriptionResult
 
 
 class TranscriptionEngine(Protocol):
@@ -10,7 +11,12 @@ class TranscriptionEngine(Protocol):
 
     def transcribe(
         self,
-        audio: LoadedAudio,
+        loaded_audio: LoadedAudio,
+        progress_callback: Callable[
+            [TranscriptionProgress],
+            None,
+        ]
+        | None = None,
     ) -> TranscriptionResult:
-        """Transcribe an audio file."""
+        """Transcribe loaded audio into a transcription result."""
         ...
