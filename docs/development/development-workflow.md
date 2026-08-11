@@ -1,6 +1,6 @@
 # Development Workflow
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
@@ -8,13 +8,18 @@ Status: Accepted
 
 # 1. Purpose
 
-This document defines the official engineering workflow for Yomikoe.
+This document defines the engineering workflow for Yomikoe.
 
-The workflow prioritizes architectural consistency over implementation speed.
+The workflow prioritizes architectural consistency, maintainability, and
+verification over implementation speed.
+
+The workflow applies to both MVP development and future architectural work.
 
 ---
 
 # 2. Workflow
+
+The general development flow is:
 
 Idea
 ↓
@@ -31,19 +36,11 @@ ADR (if required)
 
 ↓
 
-Requirements Update
-
-↓
-
-Implementation Specification
+Requirements or Specification Update
 
 ↓
 
 Implementation
-
-↓
-
-Architecture Review
 
 ↓
 
@@ -55,7 +52,16 @@ Documentation Update
 
 ↓
 
+Review
+
+↓
+
 Release
+
+Not every change requires every step.
+
+Small implementation changes and bug fixes may follow a shorter path when they
+do not affect requirements or architecture.
 
 ---
 
@@ -63,65 +69,133 @@ Release
 
 Every feature should begin with a clearly stated objective.
 
-If the feature changes architecture, an ADR is required before implementation.
+Before implementation:
 
-Implementation begins only after requirements and specifications are approved.
+- identify affected requirements
+- identify affected architectural boundaries
+- determine whether an ADR is required
+- update relevant specifications when necessary
+
+Features that change architectural decisions require an ADR before
+implementation.
+
+Implementation should remain within the accepted MVP boundary unless the
+feature is explicitly approved as future architecture.
 
 ---
 
 # 4. Bug Fixes
 
-Bug reports should identify:
+Bug reports should identify, when applicable:
 
 - affected requirement
 - affected module
 - affected transformation
-- affected test (if applicable)
+- affected test
 
 Confirmed bugs should receive regression tests whenever practical.
+
+Bug fixes should preserve existing behavior outside the affected defect.
 
 ---
 
 # 5. Refactoring
 
-Refactoring shall preserve externally observable behavior unless explicitly approved.
+Refactoring should preserve externally observable behavior unless a behavior
+change is explicitly intended.
 
-Architectural refactoring requires documentation updates.
+Architectural refactoring requires corresponding documentation updates and
+architectural review.
+
+Implementation details may change without architectural changes when public
+behavior and contracts remain stable.
 
 ---
 
 # 6. Documentation
 
-Documentation is updated as part of development.
+Documentation is part of development.
 
-Documentation is not a post-development activity.
+Documentation should be updated when:
+
+- behavior changes
+- public interfaces change
+- requirements change
+- architectural decisions change
+- terminology changes
+
+Architecture documentation describes intended structure.
+
+Implementation remains the authority for currently implemented behavior.
 
 ---
 
 # 7. Reviews
 
-Every implementation is reviewed from two perspectives:
+Changes should be reviewed from two perspectives:
 
 - architectural correctness
 - implementation quality
 
-Architectural correctness takes precedence.
+Architectural review is required when a change affects:
+
+- architectural boundaries
+- public contracts
+- domain ownership
+- requirements
+- accepted architectural decisions
+
+Routine implementation changes do not require a new architectural decision.
 
 ---
 
-# 8. Releases
+# 8. Testing
+
+Changes should be tested according to their scope.
+
+At minimum:
+
+- new behavior should have appropriate tests
+- confirmed bugs should receive regression tests when practical
+- architectural contracts should be tested where applicable
+- the existing test suite should pass before release
+
+The current MVP prioritizes unit, integration, and end-to-end verification of
+implemented behavior.
+
+Future architecture may introduce additional contract testing requirements.
+
+---
+
+# 9. Releases
 
 A release is created only when:
 
-- requirements are satisfied
+- the intended release requirements are satisfied
 - tests pass
 - documentation is current
 - architectural rules remain satisfied
+- release notes or changelog information is updated as required
+
+Future architectural capabilities are not release requirements unless they are
+explicitly included in the release scope.
 
 ---
 
-# 9. Continuous Improvement
+# 10. Continuous Improvement
 
-The workflow itself may evolve.
+The workflow may evolve as the project matures.
 
-Changes require architectural review and documentation updates.
+Changes to the workflow should be documented when they materially affect
+engineering practice.
+
+Changes that affect architectural governance require architectural review.
+
+---
+
+# 11. Stability
+
+The development workflow is part of the engineering baseline.
+
+Implementation practices may evolve while preserving the principles defined by
+this document.
