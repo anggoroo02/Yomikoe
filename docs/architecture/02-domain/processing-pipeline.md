@@ -1,6 +1,6 @@
 # Processing Pipeline Specification
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
@@ -8,77 +8,73 @@ Status: Accepted
 
 # 1. Purpose
 
-This document defines the logical processing pipeline used by the Japanese Audio Subtitle Generator.
+This document defines the logical processing pipeline used by Yomikoe.
 
-It describes how data flows through the system from user input to generated subtitle files.
+It describes how input audio moves through the system and becomes a generated
+subtitle file.
 
-The pipeline defines responsibilities only.
+The document distinguishes the current MVP pipeline from the target
+architecture.
 
-It does not define implementation details.
+It defines responsibilities and data flow, not implementation details.
 
 ---
 
 # 2. Design Principles
 
-Every processing stage shall:
+Every processing stage should:
 
-- perform one responsibility
-- produce well-defined output
-- consume well-defined input
-- remain replaceable
-- avoid hidden side effects
+- perform one logical responsibility
+- consume a well-defined input
+- produce a well-defined output
+- avoid unnecessary knowledge of other stages
+- avoid modifying input models
+- expose failures explicitly
 
-No stage should know internal implementation details of another stage.
+The current MVP may combine responsibilities that are separate stages in the
+target architecture.
+
+Such combinations are intentional MVP simplifications.
 
 ---
 
-# 3. High-Level Pipeline
+# 3. Target Architecture Pipeline
+
+The target architecture defines the following conceptual flow:
 
 User Input
 ↓
-
 Audio Validation
 ↓
-
 Audio Decoding
-
 ↓
-
 Transcription
-
 ↓
-
+Transcript Normalization
+↓
 Post Processing
-
 ↓
-
 Subtitle Generation
-
 ↓
-
 Subtitle Serialization
-
 ↓
-
 Output File
+
+Each stage has a distinct responsibility.
 
 ---
 
-# 4. Stage Descriptions
+# 4. Target Architecture Stage Descriptions
 
 ## Stage 1 — User Input
 
 Responsibility:
 
-Receive user-provided audio files.
-
-Input:
-
-None
+Receive the user-provided Audio Source.
 
 Output:
 
-Validated file path(s)
+Audio Source.
 
 ---
 
@@ -86,17 +82,18 @@ Validated file path(s)
 
 Responsibility:
 
-Verify that the provided input can be processed.
+Verify that the Audio Source can be processed.
 
-Checks may include:
+Validation may include:
 
-- file exists
-- readable
+- file existence
+- accessibility
 - supported format
+- required input invariants
 
 Output:
 
-Validated audio source
+Validated Audio Source.
 
 ---
 
@@ -104,19 +101,20 @@ Validated audio source
 
 Responsibility:
 
-Convert the source audio into a format suitable for transcription.
+Convert the validated source into normalized audio suitable for transcription.
 
-Examples:
+Possible operations include:
 
 - sample rate normalization
-- mono conversion
+- channel normalization
 - PCM conversion
-
-The transcription engine should never decode arbitrary media formats directly.
 
 Output:
 
-Normalized audio stream
+Audio Stream.
+
+The transcription engine should not be responsible for arbitrary media-format
+handling at the architecture boundary.
 
 ---
 
@@ -124,118 +122,230 @@ Normalized audio stream
 
 Responsibility:
 
-Convert speech into timestamped text segments.
+Convert speech into timestamped recognized speech.
 
 Output:
 
-Transcript Segments
+Transcription Result.
 
-Each segment contains:
-
-- start time
-- end time
-- recognized text
-
-No subtitle formatting occurs here.
+The Transcription Engine is replaceable.
 
 ---
 
-## Stage 5 — Post Processing
+## Stage 5 — Transcript Normalization
 
 Responsibility:
 
-Improve transcript quality.
+Convert engine-specific recognition output into the canonical Transcript
+model.
 
-Possible operations:
+Output:
+
+Transcript.
+
+This stage isolates engine-specific representation from downstream domain
+processing.
+
+---
+
+## Stage 6 — Post Processing
+
+Responsibility:
+
+Apply optional deterministic transformations to the Transcript.
+
+Possible operations include:
 
 - whitespace cleanup
 - punctuation normalization
 - language-specific corrections
-- optional future processing
-
-This stage must not generate subtitle files.
+- confidence-based filtering
 
 Output:
 
-Clean transcript segments
+Processed Transcript.
+
+Post processing is not required by the current MVP.
 
 ---
 
-## Stage 6 — Subtitle Generation
+## Stage 7 — Subtitle Generation
 
 Responsibility:
 
-Transform transcript segments into subtitle entries.
+Transform a Transcript into a Subtitle Document.
 
-Responsibilities include:
+Possible responsibilities include:
 
+- subtitle timing
 - line breaking
-- subtitle timing adjustments
 - subtitle numbering
+- presentation constraints
 
 Output:
 
-Subtitle Model
+Subtitle Document.
+
+No file-format-specific serialization occurs at this stage.
 
 ---
 
-## Stage 7 — Subtitle Serialization
+## Stage 8 — Subtitle Serialization
 
 Responsibility:
 
-Convert subtitle objects into a file format.
+Serialize a Subtitle Document into a selected subtitle format.
 
 Examples:
 
 - SRT
 - WebVTT
 
-This stage must contain no transcription logic.
-
 Output:
 
-Serialized subtitle document
+Serialized Subtitle.
 
 ---
 
-## Stage 8 — File Output
+## Stage 9 — File Output
 
 Responsibility:
 
-Write subtitle files to disk.
+Persist the Serialized Subtitle as an Output File.
 
-No subtitle generation occurs here.
-
-Output:
-
-Completed subtitle file
+No transcription or subtitle-generation logic occurs at this stage.
 
 ---
 
-# 5. Pipeline Rules
+# 5. Current MVP Pipeline
 
-Each stage:
+The current MVP intentionally uses a narrower pipeline:
 
-- receives immutable input
-- produces explicit output
-- may return recoverable errors
-- must not modify previous stages
+Audio Source
+↓
+Audio Loading
+↓
+Transcription
+↓
+Subtitle Generation
+↓
+SRT Serialization
+↓
+Output File
 
-Communication between stages should occur through well-defined data models.
+The current implementation does not expose every target-architecture stage as
+a separate abstraction.
+
+In particular, the MVP does not yet implement explicit:
+
+- Audio Stream
+- Transcript normalization
+- Post Processing
+- Serialized Subtitle model
+- Output File model
+- Application-level pipeline orchestration
+
+These are target-architecture capabilities rather than MVP requirements.
 
 ---
 
-# 6. Error Handling
+# 6. Current MVP Responsibilities
 
-Errors should stop only the current pipeline execution.
+## Audio Loading
 
-Intermediate failures must never corrupt the original audio.
+The MVP loads and validates the input audio and provides the information
+required by the transcription engine.
+
+This responsibility is currently implemented by the audio module.
+
+The MVP does not yet expose the target-architecture Audio Stream model.
 
 ---
 
-# 7. Future Extensions
+## Transcription
 
-Future pipeline stages may include:
+The MVP invokes a replaceable Transcription Engine.
+
+The engine produces a `TranscriptionResult`.
+
+Available implementations include:
+
+- `DummyTranscriptionEngine`
+- `FasterWhisperEngine`
+
+---
+
+## Subtitle Generation
+
+The MVP converts the transcription result into the subtitle model used by the
+current implementation.
+
+The target architecture defines Transcript as the intended stable input to
+this stage.
+
+---
+
+## SRT Serialization
+
+The MVP serializes the generated subtitle model into SRT format.
+
+The current implementation provides an SRT writer.
+
+Additional subtitle formats are outside the current MVP scope.
+
+---
+
+## Output
+
+The MVP writes the serialized SRT content to the filesystem.
+
+A separate Output Writer abstraction is part of the target architecture but is
+not required by the current MVP.
+
+---
+
+# 7. Pipeline Rules
+
+The following rules apply to both the MVP and target architecture:
+
+- Original user audio must not be modified by subtitle generation.
+- Each stage must have a clearly defined responsibility.
+- Stage failures must not silently disappear.
+- Data passed between stages should use explicit models or contracts.
+- Subtitle generation must not contain transcription-engine-specific logic.
+- Subtitle serialization must not contain transcription logic.
+- Output persistence must not contain subtitle-generation logic.
+
+---
+
+# 8. Error Handling
+
+A pipeline failure terminates the current processing operation when recovery
+is not safe.
+
+Errors must preserve relevant context while propagating toward the operation
+boundary.
+
+The application must not silently ignore stage failures.
+
+The original Audio Source must remain unchanged when processing fails.
+
+---
+
+# 9. Progress
+
+Progress reporting belongs to the processing operation rather than to an
+individual transcription engine.
+
+The target architecture may report progress at stage boundaries.
+
+Progress reporting is not yet part of the current MVP implementation.
+
+---
+
+# 10. Future Extensions
+
+The architecture may introduce additional stages or transformations such as:
 
 - Voice Activity Detection
 - Speaker Diarization
@@ -244,12 +354,16 @@ Future pipeline stages may include:
 - Subtitle Alignment
 - Confidence Analysis
 
-These additions should extend the pipeline rather than replace existing stages.
+Future stages should extend the pipeline without introducing unnecessary
+coupling between existing stages.
 
 ---
 
-# 8. Stability
+# 11. Stability
 
-The pipeline is expected to remain stable even if individual transcription engines are replaced.
+The logical pipeline is part of the architectural baseline.
 
-Changes to the pipeline require architectural review.
+Individual implementations may change while preserving the responsibilities
+and contracts of the pipeline stages.
+
+Changes to the logical pipeline require architectural review.

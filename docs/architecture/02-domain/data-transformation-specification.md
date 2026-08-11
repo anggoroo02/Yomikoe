@@ -1,6 +1,6 @@
 # Data Transformation Specification
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
@@ -8,49 +8,61 @@ Status: Accepted
 
 # 1. Purpose
 
-This document defines every transformation between core domain models.
+This document defines the conceptual transformations between the domain models
+used by Yomikoe.
 
-Transformations are explicit, deterministic, and owned by a single logical module.
+Transformations describe how data moves between processing stages.
+
+The document distinguishes the target architecture from the current MVP
+implementation.
 
 ---
 
-# 2. Principles
+# 2. Transformation Principles
 
-Every transformation shall:
+Every transformation should:
 
-- consume one well-defined input model
-- produce one well-defined output model
-- avoid mutating input objects
+- consume a well-defined input
+- produce a well-defined output
+- avoid mutating input models
 - validate required invariants
-- return explicit success or failure
+- expose failure explicitly
+- have one logical owner
 
-Transformations shall be deterministic whenever technically possible.
+Transformations should be deterministic whenever technically possible.
+
+The current MVP may combine multiple target transformations within a single
+implementation component.
 
 ---
 
-# 3. Transformation Pipeline
+# 3. Target Architecture Transformation Flow
+
+The target architecture defines the following conceptual transformations:
 
 File Path
-    ↓
+↓
 Audio Source
-    ↓
+↓
 Validated Audio Source
-    ↓
+↓
 Audio Stream
-    ↓
+↓
 Transcription Result
-    ↓
+↓
 Transcript
-    ↓
+↓
 Subtitle Document
-    ↓
+↓
 Serialized Subtitle
-    ↓
+↓
 Output File
+
+Each transformation has a distinct responsibility.
 
 ---
 
-# 4. Transformation Ownership
+# 4. Transformation Definitions
 
 ## File Path → Audio Source
 
@@ -60,7 +72,10 @@ Audio Module
 
 Purpose:
 
-Represent a user-selected resource.
+Represent the user-selected input as an Audio Source.
+
+The transformation should establish the identity of the resource without
+performing transcription or subtitle processing.
 
 ---
 
@@ -72,7 +87,14 @@ Audio Module
 
 Purpose:
 
-Verify accessibility and format.
+Verify that the Audio Source is accessible and supported.
+
+Validation may include:
+
+- existence
+- readability
+- supported format
+- required input invariants
 
 ---
 
@@ -84,7 +106,21 @@ Audio Module
 
 Purpose:
 
-Normalize audio for downstream processing.
+Decode and normalize the validated audio into a representation suitable for
+transcription.
+
+Possible normalization includes:
+
+- sample rate normalization
+- channel normalization
+- PCM conversion
+
+Output:
+
+Audio Stream.
+
+The current MVP does not yet expose this transformation as an explicit
+domain-level operation.
 
 ---
 
@@ -96,7 +132,13 @@ Transcription Module
 
 Purpose:
 
-Perform speech recognition.
+Perform speech recognition using a selected Transcription Engine.
+
+Output:
+
+Transcription Result.
+
+The concrete engine implementation must remain replaceable.
 
 ---
 
@@ -108,7 +150,13 @@ Transcription Module
 
 Purpose:
 
-Normalize engine-specific output into a stable domain model.
+Normalize engine-specific recognition output into the canonical Transcript
+model.
+
+This transformation isolates engine-specific details from downstream
+processing.
+
+The current MVP does not yet implement a separate Transcript model.
 
 ---
 
@@ -120,7 +168,18 @@ Subtitle Module
 
 Purpose:
 
-Apply subtitle formatting rules.
+Transform recognized speech into subtitle content.
+
+Possible responsibilities include:
+
+- subtitle timing
+- line breaking
+- subtitle numbering
+- presentation constraints
+
+Output:
+
+Subtitle Document.
 
 ---
 
@@ -132,7 +191,16 @@ Subtitle Module
 
 Purpose:
 
-Serialize into a selected subtitle format.
+Serialize subtitle content into a selected subtitle format.
+
+Examples:
+
+- SRT
+- WebVTT
+
+Output:
+
+Serialized Subtitle.
 
 ---
 
@@ -144,38 +212,98 @@ Infrastructure Module
 
 Purpose:
 
-Persist generated output.
+Persist serialized subtitle content to the selected output destination.
+
+No subtitle-generation logic belongs in this transformation.
 
 ---
 
-# 5. Invariants
+# 5. Current MVP Transformations
 
-Every transformation:
+The current MVP implements a narrower transformation flow:
 
-- validates its own preconditions
-- never mutates input models
-- produces complete output
-- documents possible failures
+File Path
+↓
+Loaded Audio
+↓
+Transcription Result
+↓
+Subtitle
+↓
+SRT
+↓
+Output File
+
+The current implementation combines or omits several target transformations.
+
+In particular, the MVP does not yet expose separate transformations for:
+
+- Audio Source → Validated Audio Source
+- Validated Audio Source → Audio Stream
+- Transcription Result → Transcript
+- Subtitle Document → Serialized Subtitle
+- Serialized Subtitle → Output File
+
+The MVP still satisfies its current acceptance boundary without requiring these
+target abstractions.
 
 ---
 
-# 6. Failure Rules
+# 6. Transformation Ownership
 
-A failed transformation shall:
+Each transformation has one logical owner.
 
-- preserve previous immutable models
-- return structured error information
-- never produce partially valid output
+Ownership determines:
+
+- validation responsibility
+- transformation rules
+- failure handling
+- contract maintenance
+
+Ownership must not be duplicated across modules.
 
 ---
 
-# 7. Future Transformations
+# 7. Invariants
 
-Possible future transformations include:
+Every transformation should:
+
+- validate its preconditions
+- preserve the input model
+- produce a complete output model
+- expose possible failures
+- preserve relevant error context
+
+A failed transformation must not produce partially valid output.
+
+The original Audio Source must remain unchanged.
+
+---
+
+# 8. Failure Rules
+
+A transformation failure terminates the current processing operation when
+recovery is not safe.
+
+Failures should preserve:
+
+- originating module
+- error category
+- relevant diagnostics
+- transformation context
+
+Intermediate modules may add context but must not silently discard the
+original failure information.
+
+---
+
+# 9. Future Transformations
+
+The architecture may introduce additional transformations such as:
 
 Audio Stream
 ↓
-Noise Reduced Audio Stream
+Noise-Reduced Audio Stream
 
 Transcript
 ↓
@@ -187,14 +315,19 @@ Translated Transcript
 
 Subtitle Document
 ↓
-Quality Enhanced Subtitle Document
+Quality-Enhanced Subtitle Document
 
-These additions extend the pipeline without modifying existing transformations.
+Future transformations should extend existing contracts rather than modify
+unrelated transformations.
 
 ---
 
-# 8. Stability
+# 10. Stability
 
-Transformation contracts are expected to remain stable.
+Transformation contracts are part of the architectural baseline.
 
-Implementation details may evolve independently.
+Implementation details may evolve while preserving the logical transformation
+responsibilities.
+
+Changes to transformation ownership, inputs, outputs, or invariants require
+architectural review.
