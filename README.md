@@ -2,151 +2,109 @@
 
 > **Offline Japanese Audio Subtitle Generator**
 
-Generate synchronized subtitles from Japanese audio using a fully offline and open-source transcription pipeline.
+Yomikoe is an offline-first, open-source command-line application that
+generates synchronized subtitle files from Japanese audio.
 
-<!-- Logo (Coming Soon) -->
-
----
-
-## Introduction
-
-Learning Japanese from podcasts, audiobooks, ASMR, radio programs, or recorded conversations can be difficult without synchronized subtitles.
-
-**Yomikoe** is an offline-first application that generates subtitle files from Japanese audio using open-source speech recognition technology. It focuses on privacy, simplicity, and reproducibility by keeping the entire transcription process on your local machine without requiring cloud services.
-
-Whether you're studying Japanese, creating subtitles for your own recordings, or building automated workflows, Yomikoe provides a modular foundation for generating accurate subtitle files from audio.
+It is designed for learners, creators, and developers who want to process
+Japanese audio locally without relying on cloud transcription services.
 
 ---
 
-## Features
+## ✨ Features
 
-* ✅ Offline transcription
-* ✅ Faster-Whisper backend
-* ✅ Automatic subtitle generation
-* ✅ Export to SRT
-* ✅ Cross-platform
-* ✅ Modular architecture
-* ✅ Privacy-friendly
+- 🎧 Process local audio files
+- 🇯🇵 Japanese speech transcription
+- 🕒 Timestamped transcription segments
+- 📝 Automatic subtitle generation
+- 📄 SRT subtitle export
+- 📊 Transcription progress reporting
+- 🧩 Replaceable transcription engine architecture
+- 🔒 Offline-first and privacy-friendly
+- 🧪 Automated tests for core processing components
+- 🌱 Open-source and contributor-friendly architecture
+
+### Current transcription backend
+
+Yomikoe currently uses:
+
+- [Faster-Whisper](https://github.com/SYSTRAN/faster-whisper)
+
+The transcription engine is isolated behind a stable interface so that
+alternative engines can be introduced without redesigning the subtitle
+generation pipeline.
 
 ---
 
-## Architecture
+## 🎯 Project Goals
+
+Yomikoe is built around several core principles:
+
+1. **Offline First**
+   - Audio processing should not require a cloud service.
+   - User audio remains on the local machine.
+
+2. **Free & Open Source**
+   - Avoid proprietary transcription services and vendor lock-in.
+
+3. **Modular**
+   - Major processing components have clear responsibilities.
+   - Transcription engines are replaceable.
+
+4. **Testable**
+   - Core behavior should be verifiable without requiring a real
+     transcription model or GPU.
+
+5. **Maintainable**
+   - Architecture, terminology, and important decisions are documented.
+
+6. **Contributor Friendly**
+   - Repository structure and engineering practices are designed to be
+     understandable to new contributors.
+
+---
+
+## 🏗️ Architecture
+
+The current MVP follows a small, explicit processing pipeline:
 
 ```text
-CLI
- │
- ▼
-Pipeline
- │
- ▼
-Audio Loader
- │
- ▼
-Transcription Engine
- │
- ▼
-Transcription Result
- │
- ▼
-Subtitle Generator
- │
- ▼
-SRT Writer
-```
-
-The project is organized as a modular processing pipeline where each component has a single responsibility. This design makes the transcription engine, subtitle generation, and output formats easier to extend in the future.
-
----
-
-## Installation
-
-Clone the repository and install it in editable mode.
-
-```bash
-git clone https://github.com/anggoroo02/Yomikoe.git
-
-cd yomikoe
-
-python -m venv .venv
-
-# Linux/macOS
-source .venv/bin/activate
-
-# Windows
-.venv\Scripts\activate
-
-pip install -e .
-```
-
----
-
-## Quick Start
-
-Transcribe a Japanese audio file:
-
-```bash
-yomikoe transcribe sample-JP.m4a
-```
-
-Output:
-
-```text
-sample-JP.srt
-```
-
-The generated SRT file can be opened with most video players or subtitle editors.
-
----
-
-## Roadmap
-
-### Current
-
-* ✅ MVP
-
-### Next
-
-* ⬜ Progress reporting
-* ⬜ Engine configuration
-* ⬜ GPU auto detection
-
-### Future
-
-* ⬜ WebVTT export
-* ⬜ ASS subtitle export
-* ⬜ Graphical user interface (GUI)
-
----
-
-## Project Status
-
-**Current Status:** **MVP Complete**
-
-The command-line application can:
-
-* Load audio files
-* Transcribe Japanese speech
-* Generate subtitle models
-* Export subtitles as SRT files
-
-The architecture is designed for future expansion while keeping the current implementation lightweight and maintainable.
-
----
-
-## Documentation
-
-Additional documentation is available in the `docs/` directory, including architecture notes, design documents, and implementation details.
-
----
-
-## Contributing
-
-Contributions are welcome.
-
-If you'd like to improve Yomikoe, please read **CONTRIBUTING.md** before submitting issues or pull requests.
-
----
-
-## License
-
-Licensed under the **MIT License**.
+                     ┌──────────────────┐
+                     │       CLI        │
+                     └────────┬─────────┘
+                              │
+                              ▼
+                     ┌──────────────────┐
+                     │     Pipeline     │
+                     └────────┬─────────┘
+                              │
+                    ┌─────────▼─────────┐
+                    │   Audio Loader    │
+                    └─────────┬─────────┘
+                              │
+                              ▼
+                 ┌─────────────────────────┐
+                 │ Transcription Engine    │
+                 │                         │
+                 │  Faster-Whisper        │
+                 │  Dummy Engine           │
+                 └────────────┬────────────┘
+                              │
+                              ▼
+                  ┌──────────────────────┐
+                  │ TranscriptionResult │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │ Subtitle Generator  │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                  ┌──────────────────────┐
+                  │     SRT Writer       │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+                       ┌───────────┐
+                       │ .srt file │
+                       └───────────┘
