@@ -1,6 +1,6 @@
-from yomikoe.engines.models import ComputeEnvironment
-
 import ctranslate2
+
+from yomikoe.engines.models import ComputeEnvironment
 
 
 def detect_environment() -> ComputeEnvironment:
