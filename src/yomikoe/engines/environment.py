@@ -10,9 +10,7 @@ def detect_environment() -> ComputeEnvironment:
         cuda_device_count = ctranslate2.get_cuda_device_count()
 
         supported_compute_types = (
-            frozenset(
-                ctranslate2.get_supported_compute_types("cuda")
-            )
+            frozenset(ctranslate2.get_supported_compute_types("cuda"))
             if cuda_device_count > 0
             else frozenset()
         )

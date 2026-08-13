@@ -44,10 +44,6 @@ def test_write_srt_serializes_subtitle() -> None:
 
     srt = write_srt(subtitle)
 
-    expected = (
-        "1\n"
-        "00:00:00,000 --> 00:00:01,500\n"
-        "こんにちは\n"
-    )
+    expected = "1\n00:00:00,000 --> 00:00:01,500\nこんにちは\n"
 
     assert srt.strip() == expected.strip()
