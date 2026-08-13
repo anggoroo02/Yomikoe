@@ -1,6 +1,6 @@
 # Project Vision
 
-Version: 1.0
+Version: 1.1
 
 Status: Accepted
 
@@ -23,6 +23,24 @@ The long-term vision is to become a reliable, offline-first subtitle generation 
 Rather than focusing on a single speech recognition engine, the project aims to provide a stable architecture that allows transcription technologies to evolve independently from the rest of the application.
 
 The software should remain useful for many years even as transcription engines improve.
+
+The vision describes the long-term direction of the project and does not imply
+that all described capabilities are part of the current MVP.
+The current MVP scope is defined separately by the requirements and accepted
+architecture decisions.
+
+## Vision vs MVP
+
+The vision describes the long-term direction of Yomikoe.
+
+It does not imply that every capability described in this document is part of
+the current MVP.
+
+The current MVP scope is defined by the project requirements, the accepted
+MVP architecture baseline, and the current implementation checkpoint.
+
+Future capabilities should be introduced deliberately rather than being
+treated as mandatory MVP work.
 
 ---
 
@@ -212,6 +230,10 @@ Speech recognition engines may change.
 
 Programming languages may change.
 
-The architecture should not.
+Implementation details may change.
 
-The software should remain useful because its design is stable, modular, and well documented.
+The architecture should evolve deliberately through documented architectural
+decisions rather than through accidental structural drift.
+
+The software should remain useful because its design is stable, modular, and
+well documented.

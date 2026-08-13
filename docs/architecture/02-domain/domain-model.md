@@ -1,6 +1,6 @@
 # Domain Model
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
@@ -8,17 +8,22 @@ Status: Accepted
 
 # 1. Purpose
 
-This document defines the core domain concepts used throughout the project.
+This document defines the canonical domain concepts used throughout Yomikoe.
 
-The goal is to establish a consistent vocabulary shared by developers, contributors, documentation, and implementation.
+The domain model establishes a shared vocabulary for developers, contributors,
+documentation, and implementation.
+
+The model distinguishes concepts required by the current MVP from concepts
+defined by the target architecture.
 
 ---
 
 # 2. Core Principles
 
-Domain models represent business concepts.
+Domain models represent project concepts independently of implementation
+technologies.
 
-They are independent of:
+They should remain independent of:
 
 - programming language
 - transcription engine
@@ -26,9 +31,15 @@ They are independent of:
 - storage implementation
 - user interface
 
+The current MVP may use simpler representations where the corresponding
+target-architecture domain model has not yet been implemented.
+
+Such differences are intentional architectural gaps, not undocumented
+exceptions.
+
 ---
 
-# 3. Domain Entities
+# 3. Core Domain Concepts
 
 ## Audio Source
 
@@ -46,42 +57,55 @@ Represents:
 
 "What the user wants to process."
 
+The current MVP represents the input through the loaded-audio abstraction.
+
 ---
 
 ## Processing Job
 
-Represents one execution request.
+Represents one request to process one Audio Source.
 
-A processing job contains:
+A Processing Job is responsible for the lifecycle of one processing request.
 
-- input audio
-- configuration
-- selected transcription engine
-- output destination
+The target architecture defines explicit job states and a
+ProcessingOutcome.
 
-Represents:
-
-"What the application is currently doing."
+The current MVP does not yet implement the complete Processing Job lifecycle.
 
 ---
 
 ## Audio Stream
 
-Represents normalized audio ready for transcription.
+Represents normalized audio data ready for transcription.
 
-Produced by:
+An Audio Stream is independent of the original audio file format.
 
-Audio Decoder
+The target architecture defines Audio Stream as the output of audio decoding.
 
-Consumed by:
+The current MVP does not yet expose Audio Stream as an explicit domain model.
 
-Transcription Engine
+---
+
+## Transcription Result
+
+Represents the output produced by a transcription engine before normalization.
+
+It may contain:
+
+- recognized segments
+- detected language
+- engine-specific metadata
+- engine-specific diagnostics
+
+The exact contents may vary between transcription engines.
+
+The current MVP uses `TranscriptionResult` as the primary transcription output.
 
 ---
 
 ## Transcript Segment
 
-Represents recognized speech.
+Represents one recognized portion of speech.
 
 Contains:
 
@@ -89,39 +113,24 @@ Contains:
 - end timestamp
 - recognized text
 
-Represents speech only.
+A Transcript Segment represents recognized speech.
 
-It is NOT a subtitle.
+It is not a subtitle entry.
 
 ---
 
 ## Transcript
 
-An ordered collection of Transcript Segments.
+Represents normalized recognized speech as an ordered collection of
+Transcript Segments.
 
-Represents complete recognition output.
+A Transcript is the stable speech representation intended to separate
+transcription from downstream subtitle generation.
 
----
+The target architecture uses Transcript as the boundary between transcription
+and subtitle generation.
 
-## Transcription Result
-
-Represents the raw output produced by a transcription engine.
-
-A Transcription Result may contain:
-
-- transcript segments
-- confidence scores
-- token-level timestamps
-- detected language
-- engine metadata
-- processing duration
-- engine-specific diagnostics
-
-This model is considered an intermediate domain object.
-
-It isolates engine-specific details from the rest of the application.
-
-The remainder of the processing pipeline should consume a normalized Transcript rather than engine-specific output whenever possible.
+The current MVP does not yet implement a separate Transcript model.
 
 ---
 
@@ -136,130 +145,223 @@ Contains:
 - end time
 - displayed text
 
+A Subtitle Entry is intended for subtitle presentation rather than raw speech
+recognition.
+
 ---
 
 ## Subtitle Document
 
-Represents the complete subtitle before serialization.
+Represents the complete subtitle content before serialization.
 
-Independent from SRT or WebVTT.
+A Subtitle Document is independent of any specific subtitle file format.
+
+The current MVP uses the subtitle model for this responsibility.
 
 ---
 
 ## Subtitle Format
 
-Represents a serialization target.
+Represents a serialization format for subtitle content.
 
 Examples:
 
 - SRT
 - WebVTT
 
----
+A format is not itself a domain document.
 
-## Transcription Engine
-
-Represents a speech recognition implementation.
-
-It consumes Audio Stream.
-
-It produces Transcript.
+It defines how a Subtitle Document is represented externally.
 
 ---
 
-## Pipeline Stage
+## Serialized Subtitle
 
-Represents one logical processing step.
+Represents subtitle content serialized into a specific subtitle format.
 
 Examples:
 
-- Decoder
-- Transcription
-- Serializer
+- serialized SRT
+- serialized WebVTT
+
+The serialized representation is an output artifact rather than a domain model.
 
 ---
+
+## Output File
+
+Represents a persisted generated artifact.
+
+The target architecture separates serialization from file persistence.
+
+The current MVP writes the serialized subtitle directly to the filesystem.
+
+---
+
+# 4. Processing Relationships
+
+The target architecture defines the following conceptual flow:
+
+Audio Source
+↓
+Audio Stream
+↓
+Transcription Result
+↓
+Transcript
+↓
+Subtitle Document
+↓
+Serialized Subtitle
+↓
+Output File
+
+The current MVP implements a narrower flow:
+
+Audio Source
+↓
+Loaded Audio
+↓
+Transcription Result
+↓
+Subtitle
+↓
+SRT
+↓
+Output File
+
+The difference between these flows represents the current MVP boundary and
+target-architecture gap.
+
+---
+
+# 5. Transcription Engine
+
+A Transcription Engine is a replaceable implementation responsible for speech
+recognition.
+
+It consumes the available audio input and produces a Transcription Result.
+
+The architecture must not depend on a specific engine implementation.
+
+The current MVP provides:
+
+- `TranscriptionEngine`
+- `DummyTranscriptionEngine`
+- `FasterWhisperEngine`
+
+---
+
+# 6. Pipeline Stage
+
+A Pipeline Stage represents one logical processing responsibility.
+
+Examples include:
+
+- audio loading
+- transcription
+- subtitle generation
+- subtitle serialization
+- output writing
+
+Pipeline stages should have clearly defined inputs and outputs.
+
+The target architecture may introduce additional explicit stages such as:
+
+- audio decoding
+- transcript normalization
+- post-processing
+
+These stages are not required to exist as separate implementations in the
+current MVP.
+
+---
+
+# 7. Processing Result and Processing Outcome
 
 ## Processing Result
 
-Represents the final outcome.
+Processing Result represents a result produced by a processing operation.
 
-Contains:
+The current MVP may expose narrower result models for individual operations.
 
-- success/failure
-- generated files
-- statistics
+It is not currently the canonical public operation outcome.
+
+## Processing Outcome
+
+ProcessingOutcome represents the complete outcome of a Processing Job.
+
+It includes:
+
+- execution status
+- generated artifacts
+- warnings
 - diagnostics
+- statistics
+
+ProcessingOutcome belongs to the target architecture and is not yet fully
+implemented by the MVP.
 
 ---
 
-# 4. Domain Relationships
+# 8. Domain Invariants
 
-Audio Source
+The following invariants apply to the architecture:
 
-↓
-
-Processing Job
-
-↓
-
-Audio Stream
-
-↓
-
-Transcription Engine
-
-↓
-
-Transcription Result
-
-↓
-
-Transcript
-
-↓
-
-Subtitle Document
-
-↓
-
-Serialized Subtitle
-
-↓
-
-Output File
+- Transcript is not a subtitle.
+- Transcript Segment represents recognized speech.
+- Subtitle Entry represents subtitle presentation.
+- Subtitle Document is independent of a specific file format.
+- Serialized Subtitle is an external representation of subtitle content.
+- Audio Stream is independent of the original audio file format.
+- A Processing Job represents one processing request.
+- A Processing Job produces exactly one ProcessingOutcome in the target
+  architecture.
 
 ---
 
-# 5. Invariants
+# 9. Naming Rules
 
-Transcript is never a subtitle.
+Yomikoe uses one canonical name for each domain concept.
 
-Subtitle Document is independent of file format.
+Canonical terminology is defined by:
 
-Audio Stream is independent of audio file format.
+- `docs/reference/glossary.md`
+- accepted Architecture Decision Records
 
-Processing Job owns the pipeline execution.
+Synonyms must not be introduced into implementation or documentation without
+architectural review.
 
-Pipeline Stages are stateless whenever possible.
-
----
-
-# 6. Naming Rules
-
-One concept.
-
-One name.
-
-One definition.
-
-No synonyms should be introduced into implementation without architectural review.
+When an implementation uses a different technical name for an existing domain
+concept, the relationship must be documented explicitly.
 
 ---
 
-# 7. Stability
+# 10. MVP Boundary
 
-These domain concepts are expected to remain stable over the lifetime of the project.
+The current MVP intentionally does not implement every domain concept defined
+by the target architecture.
 
-Implementation details may change.
+In particular, the following remain target-architecture concepts:
 
-Domain terminology should not.
+- explicit Audio Stream
+- explicit Transcript
+- explicit Processing Job lifecycle
+- explicit ProcessingOutcome
+- explicit Serialized Subtitle model
+- explicit Output File model
+
+Their absence from the current implementation does not invalidate the domain
+model.
+
+Future implementation may introduce these concepts without changing their
+canonical meaning.
+
+---
+
+# 11. Stability
+
+The domain model is part of the architectural baseline.
+
+Changes to canonical domain concepts or their relationships require
+architectural review.

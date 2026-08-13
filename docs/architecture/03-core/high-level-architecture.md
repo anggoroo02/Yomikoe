@@ -1,202 +1,286 @@
 # High-Level Architecture
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
 ---
 
-# 1. Overview
+# 1. Purpose
 
-The Japanese Audio Subtitle Generator is organized as a layered, modular architecture.
+This document defines the high-level software architecture of Yomikoe.
 
-The design separates user interfaces, application orchestration, processing pipeline, and infrastructure.
+It describes the architectural boundaries between user interfaces,
+application orchestration, processing modules, and infrastructure.
 
-Each layer has a single responsibility.
-
-Dependencies always point downward.
-
-Lower layers never depend on higher layers.
+The document distinguishes the target architecture from the current MVP
+implementation.
 
 ---
 
-# 2. Architectural Layers
+# 2. Architectural Model
 
-┌──────────────────────────────┐
-│ User Interfaces              │
-│ CLI                          │
-│ Future GUI                   │
-│ Future REST API              │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│ Application Layer            │
-│ Use Cases                    │
-│ Job Coordination             │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│ Pipeline Orchestrator        │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│ Processing Modules           │
-│ Validation                   │
-│ Decoder                      │
-│ Transcription                │
-│ Post Processing              │
-│ Subtitle Generator           │
-│ Serializer                   │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│ Infrastructure               │
-│ File System                  │
-│ External Libraries           │
-│ Logging                      │
-│ Configuration                │
-└──────────────────────────────┘
+Yomikoe uses a modular architecture organized around explicit responsibilities
+and replaceable components.
+
+The target architecture separates:
+
+- User Interface
+- Application
+- Pipeline
+- Processing Modules
+- Infrastructure
+
+The current MVP implements a narrower subset of these boundaries.
 
 ---
 
-# 3. Layer Responsibilities
+# 3. Target Architecture
 
-## User Interface Layer
+The target architecture is conceptually organized as follows:
+
+```text
+┌──────────────────────────────┐
+│ User Interface               │
+│ CLI / Future GUI / API       │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Application                  │
+│ Use Cases / Job Coordination │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│ Pipeline                     │
+│ Processing Orchestration     │
+└──────────────┬───────────────┘
+               │
+       ┌───────┼─────────────────────┐
+       ▼       ▼                     ▼
+┌──────────┐ ┌──────────────┐ ┌──────────────┐
+│ Audio    │ │ Transcription│ │ Subtitle     │
+│ Module   │ │ Module       │ │ Module       │
+└────┬─────┘ └──────┬───────┘ └──────┬───────┘
+     │              │                │
+     └──────────────┼────────────────┘
+                    ▼
+          ┌─────────────────────┐
+          │ Infrastructure      │
+          │ Files / Libraries   │
+          │ Environment         │
+          └─────────────────────┘
+```
+
+The exact implementation may evolve while preserving these architectural
+responsibilities.
+
+---
+
+# 4. Layer Responsibilities
+
+## User Interface
 
 Responsibilities:
 
-- Receive user input.
-- Display progress.
-- Display errors.
-- Present results.
+- receive user input
+- invoke application use cases
+- display progress
+- display errors
+- present results
 
-Must not contain business logic.
+The User Interface must not contain core processing logic.
 
----
+The current MVP provides a CLI.
 
-## Application Layer
-
-Responsibilities:
-
-- Validate requests.
-- Build processing jobs.
-- Invoke the Pipeline Orchestrator.
-- Return results.
-
-This layer exposes the public API of the application.
+Future interfaces may include a GUI or other application frontends.
 
 ---
 
-## Pipeline Orchestrator
+## Application
 
 Responsibilities:
 
-- Execute pipeline stages in order.
-- Pass data between stages.
-- Handle recoverable failures.
-- Report progress.
+- expose application use cases
+- validate processing requests
+- create and manage Processing Jobs
+- invoke pipeline execution
+- report results
 
-This is the only component allowed to coordinate processing stages.
+The Application layer coordinates use cases but does not implement individual
+processing stages.
+
+The current MVP has not yet implemented the complete target Application layer.
+
+---
+
+## Pipeline
+
+Responsibilities:
+
+- execute processing stages
+- maintain stage order
+- pass data between stages
+- coordinate processing progress
+- propagate failures
+
+The Pipeline owns orchestration.
+
+Individual processing modules must not coordinate other processing modules
+directly.
+
+The current MVP provides pipeline orchestration but does not implement every
+target pipeline abstraction.
 
 ---
 
 ## Processing Modules
 
-Each module performs exactly one transformation.
+Processing modules implement individual processing responsibilities.
 
-Modules communicate only through defined data contracts.
+Examples include:
 
-Modules never invoke each other directly.
+- Audio
+- Transcription
+- Subtitle
+
+Each module should expose explicit contracts and hide implementation details.
 
 ---
 
-## Infrastructure Layer
+## Infrastructure
 
-Provides technical capabilities such as:
+Infrastructure provides technical capabilities required by the application.
+
+Examples include:
 
 - filesystem access
-- audio decoding libraries
+- external libraries
+- runtime dependencies
+- environment interaction
 - logging
-- configuration loading
+- configuration sources
 
-Infrastructure must never contain business rules.
+Infrastructure must not contain domain or application business rules.
 
 ---
 
-# 4. Dependency Rules
+# 5. Dependency Rules
 
-Allowed:
+The target dependency direction is:
 
-UI
-→ Application
-
+```text
+User Interface
+      ↓
 Application
-→ Pipeline Orchestrator
-
-Pipeline Orchestrator
-→ Processing Modules
-
+      ↓
+Pipeline
+      ↓
 Processing Modules
-→ Infrastructure (only when required)
-
-Forbidden:
-
-Processing Module
-→ Processing Module
-
+      ↓
 Infrastructure
-→ Application
+```
 
-Infrastructure
-→ UI
+Processing modules may depend on infrastructure capabilities through documented
+Ports and Adapters.
 
-Engine
-→ Serializer
+The following dependencies are forbidden:
 
-Serializer
-→ Engine
+```text
+Processing Module → Processing Module
+Infrastructure → Application
+Infrastructure → Pipeline
+Infrastructure → User Interface
+Transcription → Subtitle
+Subtitle → Transcription
+```
+
+Processing stages communicate through explicit data models and contracts rather
+than direct implementation coupling.
 
 ---
 
-# 5. Core Architectural Principles
+# 6. Core Architectural Principles
+
+The architecture follows these principles:
 
 - Single Responsibility
 - Explicit Data Flow
 - Engine Independence
 - Offline First
 - Replaceable Components
-- Public Interfaces Only
 - Stable Contracts
 - Minimal Coupling
+- Public Interfaces
+- Testable Boundaries
+
+These principles are part of the architectural baseline.
 
 ---
 
-# 6. Extension Strategy
+# 7. Extension Strategy
 
-Future features should be introduced by adding new modules or replacing existing implementations.
+New capabilities should normally be introduced by:
 
-Existing module boundaries should remain stable.
+- adding a new implementation behind an existing Port
+- adding a new module when a new responsibility is required
+- extending an existing contract only when necessary
 
-Examples:
+Examples include:
 
-- new transcription engine
-- additional subtitle format
-- subtitle editor
-- translation module
-- speaker diarization
+- additional transcription engines
+- additional subtitle formats
+- audio-processing capabilities
+- future translation
+- future speaker diarization
 
-These extensions should not require redesigning the architecture.
+Extensions must not bypass established architectural boundaries.
 
 ---
 
-# 7. Stability
+# 8. Current MVP Boundary
 
-The architecture is intended to remain stable across future releases.
+The current MVP intentionally implements a smaller architecture.
 
-Implementation details may evolve.
+The implemented path is conceptually:
 
-Module responsibilities should not.
+```text
+CLI
+ ↓
+Audio Loading
+ ↓
+Transcription Engine
+ ↓
+Subtitle Generation
+ ↓
+SRT Writer
+ ↓
+Output File
+```
+
+The MVP does not yet implement every target layer as an explicit abstraction.
+
+In particular, the following remain architectural targets:
+
+- complete Application use-case layer
+- explicit Audio Stream boundary
+- explicit Transcript normalization boundary
+- complete Port and Adapter infrastructure
+- explicit Output Writer abstraction
+- complete Processing Job lifecycle
+- complete ProcessingOutcome model
+
+The absence of these abstractions from the MVP does not change their canonical
+architectural meaning.
+
+---
+
+# 9. Stability
+
+The high-level architecture is part of the architectural baseline.
+
+Implementation details may evolve while preserving the defined boundaries and
+dependency direction.
+
+Changes to architectural layers or dependency rules require architectural

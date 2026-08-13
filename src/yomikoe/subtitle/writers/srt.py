@@ -15,12 +15,8 @@ def format_timestamp(seconds: float) -> str:
     secs = milliseconds // 1000
     milliseconds %= 1000
 
-    return (
-        f"{hours:02}:"
-        f"{minutes:02}:"
-        f"{secs:02},"
-        f"{milliseconds:03}"
-    )
+    return f"{hours:02}:{minutes:02}:{secs:02},{milliseconds:03}"
+
 
 def write_srt(
     subtitle: Subtitle,
@@ -32,10 +28,7 @@ def write_srt(
         start=1,
     ):
         lines.append(str(index))
-        lines.append(
-            f"{format_timestamp(cue.start)} --> "
-            f"{format_timestamp(cue.end)}"
-        )
+        lines.append(f"{format_timestamp(cue.start)} --> {format_timestamp(cue.end)}")
         lines.append(cue.text)
         lines.append("")
 

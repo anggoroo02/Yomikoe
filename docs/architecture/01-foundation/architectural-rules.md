@@ -12,6 +12,16 @@ This document defines the non-negotiable architectural rules of Yomikoe.
 
 These rules exist to preserve long-term maintainability and architectural consistency.
 
+These rules describe the architectural direction of Yomikoe.
+
+Some rules represent constraints that apply to the current MVP, while others
+describe the target architecture toward which the project evolves.
+
+The MVP is not required to implement every target-architecture mechanism.
+When a target architectural rule is not yet implemented, the difference must
+be understood as an intentional architectural gap rather than an undocumented
+exception.
+
 ---
 
 # 2. Core Principles
@@ -70,7 +80,10 @@ Extensions must not access Core internals.
 
 # 7. Error Handling Rules
 
-Public operations produce a ProcessingOutcome.
+Public operations in the target architecture produce a ProcessingOutcome.
+
+The current MVP may expose narrower operation results where the corresponding
+application-layer contract has not yet been implemented.
 
 Errors are propagated with context.
 

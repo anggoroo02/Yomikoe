@@ -16,7 +16,28 @@ Every implementation should trace back to one or more requirements defined in th
 
 ---
 
-# 2. Definitions
+# 2. Requirement Status and MVP Scope
+
+Requirements describe the intended system behavior and product direction.
+
+Requirement priority indicates the importance of a capability:
+
+- `Must` — required product capability.
+- `Should` — desirable capability that may be implemented when appropriate.
+
+Requirement priority does not by itself determine whether a capability is part
+of the current MVP.
+
+MVP completeness is defined by the acceptance criteria in Section 9 and the
+accepted MVP architecture baseline.
+
+Requirements outside the current MVP scope remain valid product requirements
+and may be implemented in future development.
+
+---
+
+
+# 3. Definitions
 
 ## Audio Source
 
@@ -63,15 +84,20 @@ Operating without Internet connectivity.
 
 ---
 
-# 3. System Overview
+# 4. System Overview
 
-The application accepts one or more local audio files, processes them using a transcription engine, and produces synchronized subtitle files suitable for media players.
+The application accepts local audio files, processes them using a
+transcription engine, and produces synchronized subtitle files suitable for
+media players.
+
+The MVP processes one input file per invocation. Batch processing may be
+introduced as a future capability.
 
 The system shall prioritize privacy, modularity, and offline operation.
 
 ---
 
-# 4. Functional Requirements
+# 5. Functional Requirements
 
 ## Audio Input
 
@@ -131,7 +157,7 @@ The system should process multiple files sequentially.
 
 ## Progress Reporting
 
-### FR-011 (Must)
+### FR-011 (Should)
 
 The system shall report processing progress.
 
@@ -143,7 +169,7 @@ The system should estimate remaining processing time when feasible.
 
 ## Configuration
 
-### FR-013 (Must)
+### FR-013 (Should)
 
 The application shall support configuration through files and command-line arguments.
 
@@ -151,7 +177,7 @@ The application shall support configuration through files and command-line argum
 
 ## Logging
 
-### FR-014 (Must)
+### FR-014 (Should)
 
 The application shall provide human-readable logs.
 
@@ -165,7 +191,7 @@ Meaningful error messages shall be presented to the user.
 
 ---
 
-# 5. Non-Functional Requirements
+# 6. Non-Functional Requirements
 
 ## Privacy
 
@@ -247,7 +273,7 @@ The CLI shall provide descriptive help messages.
 
 ---
 
-# 6. Constraints
+# 7. Constraints
 
 - Offline-first
 - Free/Open Source
@@ -259,7 +285,7 @@ The CLI shall provide descriptive help messages.
 
 ---
 
-# 7. Assumptions
+# 8. Assumptions
 
 - Users provide legally obtained audio.
 - Users possess sufficient local hardware for transcription.
@@ -267,7 +293,7 @@ The CLI shall provide descriptive help messages.
 
 ---
 
-# 8. Acceptance Criteria
+# 9. Acceptance Criteria
 
 The MVP is considered complete when:
 
@@ -280,7 +306,7 @@ The MVP is considered complete when:
 
 ---
 
-# 9. Out of Scope
+# 10. Out of Scope
 
 The MVP does not require:
 

@@ -141,7 +141,7 @@ Keep the codebase consistent and easy to maintain.
 
 ## Python Version
 
-* Use **Python 3.14+**.
+* Use **Python 3.12+**.
 
 ## Type Hints
 

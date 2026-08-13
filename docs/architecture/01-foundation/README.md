@@ -4,7 +4,8 @@
 
 This section contains the fundamental architectural documents that define the identity, goals, and engineering principles of the Yomikoe project.
 
-Every contributor should read this section before reading any other architecture document.
+Every contributor should understand this section before making
+architecture-related changes.
 
 ---
 

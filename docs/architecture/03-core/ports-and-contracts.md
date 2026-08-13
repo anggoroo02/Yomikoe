@@ -1,6 +1,6 @@
 # Ports & Contracts Specification
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
@@ -8,47 +8,50 @@ Status: Accepted
 
 # 1. Purpose
 
-This document defines the architectural contracts between logical modules.
+This document defines the architectural Ports and Contracts used to isolate the
+core application from replaceable implementations.
 
-Ports represent capabilities required by the core application.
+A Port defines a stable capability boundary.
 
-Adapters provide concrete implementations of those capabilities.
+An Adapter provides a concrete implementation of a Port.
 
-The core application depends only on Ports.
+The current MVP implements only a subset of the target Port architecture.
 
 ---
 
 # 2. Design Principles
 
-Every Port shall:
+Every Port should:
 
 - represent one capability
-- remain technology-independent
-- expose stable behavior
+- remain independent of concrete technologies
+- define stable behavior
+- define explicit inputs and outputs
+- define possible failures
 - hide implementation details
-- be replaceable
+- remain replaceable
 
-Adapters may change.
-
-Ports should remain stable.
+Adapters may evolve independently from Ports.
 
 ---
 
-# 3. Architectural Rule
+# 3. Architectural Model
 
+The target relationship is:
+
+```text
 Core
-↓
+ ↓
+Port
+ ↓
+Adapter
+ ↓
+Technology
+```
 
-Ports
-↓
+The Core depends on the Port contract rather than a concrete technology.
 
-Adapters
-
-Dependencies always point toward Ports.
-
-Adapters never define system behavior.
-
-They only implement required capabilities.
+Adapters implement the behavior required by Ports.
 
 ---
 
@@ -56,114 +59,149 @@ They only implement required capabilities.
 
 ## AudioDecoderPort
 
-Purpose:
+### Purpose
 
-Convert an Audio Source into a normalized Audio Stream.
+Convert an Audio Source into normalized Audio Stream data.
 
-Consumes:
+### Input
 
 Audio Source
 
-Produces:
+### Output
 
 Audio Stream
+
+### MVP Status
+
+Not yet implemented as an explicit Port.
 
 ---
 
 ## TranscriptionEnginePort
 
-Purpose:
+### Purpose
 
-Convert Audio Stream into Transcription Result.
+Convert available audio input into a Transcription Result.
 
-Consumes:
+### Input
 
-Audio Stream
+Audio input
 
-Produces:
+### Output
 
 Transcription Result
+
+### MVP Status
+
+Implemented conceptually by the current `TranscriptionEngine` abstraction.
+
+Concrete implementations include:
+
+- `DummyTranscriptionEngine`
+- `FasterWhisperEngine`
 
 ---
 
 ## TranscriptNormalizerPort
 
-Purpose:
+### Purpose
 
-Convert Transcription Result into Transcript.
+Convert a Transcription Result into the canonical Transcript model.
 
-Consumes:
+### Input
 
 Transcription Result
 
-Produces:
+### Output
 
 Transcript
+
+### MVP Status
+
+Not yet implemented.
 
 ---
 
 ## SubtitleSerializerPort
 
-Purpose:
+### Purpose
 
-Serialize Subtitle Document into a specific file format.
+Serialize a Subtitle Document into a selected subtitle format.
 
-Consumes:
+### Input
 
 Subtitle Document
 
-Produces:
+### Output
 
 Serialized Subtitle
+
+### MVP Status
+
+The current MVP provides an SRT writer, but does not yet expose the complete
+target Port abstraction.
 
 ---
 
 ## OutputWriterPort
 
-Purpose:
+### Purpose
 
-Persist generated output.
+Persist serialized subtitle content to an output destination.
 
-Consumes:
+### Input
 
 Serialized Subtitle
 
-Produces:
+### Output
 
 Output File
+
+### MVP Status
+
+Not yet implemented as a separate Port.
 
 ---
 
 ## ConfigurationProviderPort
 
-Purpose:
+### Purpose
 
 Provide validated application configuration.
+
+### MVP Status
+
+Target architecture concept.
 
 ---
 
 ## LoggerPort
 
-Purpose:
+### Purpose
 
 Provide diagnostic logging.
+
+### MVP Status
+
+Target architecture concept.
 
 ---
 
 # 5. Contract Rules
 
-Ports must:
+Ports define:
 
-- define behavior
-- define expected inputs
-- define expected outputs
-- define possible failures
+- accepted inputs
+- produced outputs
+- behavioral guarantees
+- possible failures
 
 Ports must not:
 
-- expose implementation details
-- depend on concrete libraries
-- require a specific engine
+- expose concrete implementation details
+- depend on a specific external library
+- require a specific transcription engine
+- contain technology-specific behavior
 
 ---
 
@@ -172,35 +210,40 @@ Ports must not:
 Adapters:
 
 - implement one or more Ports
-- contain technology-specific code
+- contain technology-specific integration code
 - may depend on external libraries
-- must not contain business rules
+- translate external behavior into the Port contract
+- must not contain unrelated business rules
 
-Examples:
+Examples of possible adapters include:
 
-FFmpeg Decoder
+- FFmpeg audio decoder
+- Faster Whisper transcription adapter
+- Whisper.cpp transcription adapter
+- SRT serializer
+- WebVTT serializer
+- filesystem output writer
 
-Whisper.cpp Engine
-
-Faster Whisper Engine
-
-WebVTT Serializer
-
-SRT Serializer
+The existence of an adapter in this document does not imply that it is
+currently implemented.
 
 ---
 
-# 7. Error Model
+# 7. Error Contract
 
-Every Port returns one of:
+Ports must define how failures are exposed to their callers.
 
-Success
+Failures should preserve:
 
-Recoverable Failure
+- error category
+- originating context
+- relevant diagnostics
 
-Fatal Failure
+The target architecture may use structured operation results.
 
-Ports never terminate the application directly.
+The current MVP primarily uses exceptions and module-specific exception classes.
+
+Ports must not terminate the application directly.
 
 ---
 
@@ -209,13 +252,43 @@ Ports never terminate the application directly.
 Breaking changes to a Port require:
 
 - architectural review
-- version increment
+- version increment where applicable
 - migration documentation
+
+Backward-compatible additions should avoid changing existing behavior.
 
 ---
 
-# 9. Stability
+# 9. MVP Boundary
 
-Ports are expected to remain stable for multiple releases.
+The current MVP uses a simpler abstraction model.
 
-Adapters may evolve independently.
+Implemented or partially implemented boundaries include:
+
+- transcription engine abstraction
+- subtitle writer abstraction
+- pipeline orchestration
+
+The following remain target architectural abstractions:
+
+- AudioDecoderPort
+- TranscriptNormalizerPort
+- SubtitleSerializerPort as a generalized format-independent Port
+- OutputWriterPort
+- ConfigurationProviderPort
+- LoggerPort
+
+The target Port model must not be interpreted as a claim that all Ports already
+exist in the MVP implementation.
+
+---
+
+# 10. Stability
+
+Ports and their contracts are part of the architectural baseline.
+
+Adapters may change independently as long as they preserve the applicable Port
+contract.
+
+Changes to Port responsibilities, inputs, outputs, or failure semantics require
+architectural review.

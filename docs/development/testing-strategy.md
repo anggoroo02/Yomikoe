@@ -1,6 +1,6 @@
 # Testing Strategy & Traceability
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
@@ -8,23 +8,28 @@ Status: Accepted
 
 # 1. Purpose
 
-This document defines how Yomikoe verifies correctness, architectural integrity, and long-term maintainability.
+This document defines how Yomikoe verifies correctness, architectural
+integrity, and long-term maintainability.
 
-Testing validates both implementation and architecture.
+Testing validates both implemented behavior and relevant architectural
+contracts.
 
 ---
 
 # 2. Principles
 
-Testing shall:
+Testing should:
 
 - verify requirements
-- verify contracts
-- verify transformations
-- verify outcomes
+- verify implemented behavior
+- verify stable contracts
+- verify important transformations
+- verify processing results
 - remain deterministic whenever practical
 
 Tests should document expected behavior.
+
+Tests should prefer observable behavior over implementation details.
 
 ---
 
@@ -37,53 +42,87 @@ The preferred testing hierarchy is:
 - Integration Tests
 - End-to-End Tests
 
-The project emphasizes Unit and Contract Tests.
+The current MVP prioritizes Unit, Integration, and End-to-End tests.
+
+Contract Tests become relevant when replaceable Port/Adapter contracts are
+implemented.
 
 ---
 
 # 4. Unit Tests
 
-Verify isolated domain logic.
+Unit Tests verify isolated logic and module behavior.
 
-Unit Tests:
+Unit Tests should:
 
 - execute quickly
-- avoid external dependencies
-- avoid filesystem access
+- avoid unnecessary external dependencies
 - avoid network access
+- isolate filesystem access when practical
+- use deterministic test data
+
+Examples include:
+
+- audio metadata handling
+- input validation
+- transcription result mapping
+- subtitle generation
+- SRT formatting
 
 ---
 
 # 5. Contract Tests
 
-Verify that adapters correctly implement Ports.
+Contract Tests verify that concrete adapters satisfy an established Port
+contract.
 
-Contract Tests ensure that different implementations behave consistently.
+Contract Tests are applicable when the corresponding Port and Adapter
+abstractions are implemented.
+
+They should verify behavior rather than implementation details.
 
 ---
 
 # 6. Integration Tests
 
-Verify collaboration between logical modules.
+Integration Tests verify collaboration between implemented modules.
 
-Integration Tests validate:
+For the current MVP, integration tests may validate:
 
+- audio loading
+- transcription engine integration
 - Pipeline execution
-- Module interaction
-- ProcessingOutcome generation
+- subtitle generation
+- SRT export
+- error propagation between relevant modules
+
+`PipelineResult` should be validated where it represents the result of the
+complete MVP processing workflow.
+
+`ProcessingOutcome` is part of the target architecture and is not required for
+MVP integration tests.
 
 ---
 
 # 7. End-to-End Tests
 
-Verify complete user workflows.
+End-to-End Tests verify complete user workflows.
 
-Examples:
+A representative MVP workflow is:
 
 Audio File
 ↓
 
+Yomikoe CLI
+↓
+
+Processing Pipeline
+↓
+
 Subtitle File
+
+E2E tests should verify externally observable behavior such as successful
+processing, generated output, and meaningful failure reporting.
 
 ---
 
@@ -91,51 +130,83 @@ Subtitle File
 
 Every confirmed bug should receive a regression test whenever practical.
 
+Regression tests should reproduce the original failure and verify the expected
+correct behavior.
+
 ---
 
 # 9. Test Data
 
-Test assets shall:
+Test assets should:
 
 - be deterministic
 - have clear licensing
 - be documented
+- remain small enough for practical test execution when possible
+
+Tests should not depend on unavailable user-specific files.
 
 ---
 
 # 10. Traceability
 
-Every Requirement should map to:
+Requirements should be traceable to the relevant implemented behavior and
+tests.
 
-Domain Concept
+A typical relationship is:
+
+Requirement
 ↓
 
-Module
+Relevant Domain Concept or Module
 ↓
 
-Port
-↓
-
-Transformation
+Implemented Behavior or Contract
 ↓
 
 Test
 
+Ports and Transformations should be included in the traceability chain when
+they are relevant to the requirement.
+
+Not every requirement requires a Port or a separate Transformation.
+
 ---
 
-# 11. Definition of Done
+# 11. Current MVP Testing Boundary
 
-Implementation is complete only when:
+The current MVP does not require the complete target architecture to be
+implemented before testing begins.
+
+Tests should focus on currently implemented behavior, including:
+
+- Audio
+- Transcription Engine
+- Pipeline
+- Subtitle generation
+- SRT writing
+- CLI behavior
+
+Future concepts such as `ProcessingJob`, `ProcessingOutcome`, and unimplemented
+Ports should not be tested as if they were existing implementation.
+
+---
+
+# 12. Definition of Done
+
+Implementation is complete when, within its intended scope:
 
 - requirements are satisfied
+- appropriate tests pass
 - documentation is updated
-- tests pass
 - architectural rules remain satisfied
+- known regressions are covered when practical
 
 ---
 
-# 12. Stability
+# 13. Stability
 
-The testing strategy evolves conservatively.
+The testing strategy evolves as the implementation and architecture mature.
 
-Changes require architectural review.
+Changes that materially affect testing policy should be documented and reviewed
+appropriately.

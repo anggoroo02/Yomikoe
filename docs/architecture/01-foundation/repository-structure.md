@@ -1,6 +1,6 @@
 # Repository Structure Specification
 
-Version: 1.0
+Version: 1.1
 
 Status: Accepted
 
@@ -29,67 +29,102 @@ The repository shall:
 
 # 3. Top-Level Layout
 
+```
 /
-├── README.md
-├── LICENSE
-├── CONTRIBUTING.md
-├── CODE_OF_CONDUCT.md
-├── CHANGELOG.md
-├── pyproject.toml
+├── .github/
+├── assets/
 ├── docs/
+├── examples/
+├── scripts/
 ├── src/
 ├── tests/
-├── scripts/
-├── assets/
-├── examples/
-└── tools/
+├── tools/
+│
+├── CHANGELOG.md
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── README.md
+├── SECURITY.md
+└── pyproject.toml
+```
 
 ---
 
 # 4. Documentation Layout
 
+```
 docs/
 │
+├── README.md
+│
 ├── architecture/
-│   ├── project-vision.md
-│   ├── requirements-specification.md
-│   ├── processing-pipeline.md
-│   ├── high-level-architecture.md
-│   ├── domain-model.md
-│   ├── module-specification.md
-│   ├── ports-and-contracts.md
-│   ├── extension-architecture.md
-│   ├── data-transformation-specification.md
-│   ├── error-model.md
-│   ├── processing-job-lifecycle.md
-│   └── architectural-rules.md
+│   ├── README.md
+│   │
+│   ├── 01-foundation/
+│   │   ├── README.md
+│   │   ├── architectural-rules.md
+│   │   ├── project-vision.md
+│   │   ├── repository-structure.md
+│   │   └── requirements.md
+│   │
+│   ├── 02-domain/
+│   │   ├── README.md
+│   │   ├── data-transformation-specification.md
+│   │   ├── domain-model.md
+│   │   ├── error-model.md
+│   │   ├── processing-job-lifecycle.md
+│   │   └── processing-pipeline.md
+│   │
+│   ├── 03-core/
+│   │   ├── README.md
+│   │   ├── extension-architecture.md
+│   │   ├── high-level-architecture.md
+│   │   ├── module-specification.md
+│   │   └── ports-and-contracts.md
+│   │
+│   └── 04-governance/
+│       └── README.md
 │
-├── adr/
-│   ├── ADR-0001.md
-│   ├── ADR-0002.md
-│   └── ...
-│
-├── specifications/
-│   ├── codex/
-│   ├── milestones/
-│   └── implementation/
+├── decisions/
+│   └── adr/
+│       ├── README.md
+│       ├── ADR-001-mvp-architecture-baseline.md
+│       └── ADR-002-canonical-domain-terminology.md
 │
 ├── development/
-│   ├── coding-standards.md
-│   ├── testing-strategy.md
 │   ├── development-workflow.md
-│   └── release-process.md
+│   ├── engineering-standards.md
+│   ├── release-strategy.md
+│   └── testing-strategy.md
 │
-└── reference/
-    ├── glossary.md
-    ├── capabilities.md
-    └── supported-formats.md
+├── diagrams/
+│
+├── engineering/
+│
+├── reference/
+│
+└── specifications/
+    ├── codex/
+    ├── implementation/
+    └── milestones/
+```
+
+The documentation areas have distinct purposes:
+
+- `architecture/` — architectural models, rules, and system specifications.
+- `decisions/` — accepted architectural decisions recorded as ADRs.
+- `development/` — contributor and development guidance.
+- `diagrams/` — visual representations of the system and architecture.
+- `engineering/` — engineering proposals and technical planning.
+- `reference/` — stable reference material such as terminology and supported capabilities.
+- `specifications/` — detailed implementation and planning specifications.
 
 ---
 
 # 5. Source Layout
 
-src/
+`src/`
 
 Contains implementation only.
 
@@ -99,7 +134,7 @@ Architecture documentation does not belong here.
 
 # 6. Tests Layout
 
-tests/
+`tests/`
 
 Organized to mirror architectural ownership rather than internal implementation details whenever practical.
 

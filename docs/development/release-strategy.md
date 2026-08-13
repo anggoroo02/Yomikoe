@@ -1,6 +1,6 @@
 # Release Strategy & Versioning
 
-Version: 1.0
+Version: 2.0
 
 Status: Accepted
 
@@ -8,9 +8,11 @@ Status: Accepted
 
 # 1. Purpose
 
-This document defines the release philosophy and versioning strategy for Yomikoe.
+This document defines the release philosophy and versioning strategy for
+Yomikoe.
 
-The objective is to provide predictable releases while preserving long-term maintainability.
+The objective is to provide predictable releases while preserving
+long-term maintainability.
 
 ---
 
@@ -20,7 +22,7 @@ Yomikoe follows Semantic Versioning (SemVer):
 
 MAJOR.MINOR.PATCH
 
-Example:
+Examples:
 
 0.1.0
 
@@ -34,37 +36,41 @@ Example:
 
 Versions below 1.0 are considered evolving.
 
-However:
+Pre-1.0 status does not justify poor engineering practices.
 
-Architectural discipline remains identical to post-1.0 releases.
-
-Pre-1.0 does not justify poor engineering practices.
+Architectural discipline, testing, and documentation remain important throughout
+development.
 
 ---
 
 # 4. Stable Release
 
-Version 1.0.0 represents:
+Version 1.0.0 represents a stable MVP release.
 
-- stable architecture
-- stable public CLI
-- documented public interfaces
-- complete MVP
-- production-quality documentation
+A 1.0.0 release is expected to provide:
 
-It does not imply every planned feature has been implemented.
+- complete MVP acceptance criteria
+- stable public CLI behavior
+- documented implemented public interfaces
+- passing tests
+- current documentation
+- production-quality release packaging
+
+A 1.0.0 release does not imply that every capability described by the target
+architecture has been implemented.
 
 ---
 
 # 5. Patch Releases
 
-PATCH releases include:
+PATCH releases may include:
 
 - bug fixes
 - documentation improvements
 - implementation refinements
+- non-breaking maintenance changes
 
-No intentional breaking changes.
+Patch releases must not intentionally introduce breaking public behavior.
 
 ---
 
@@ -73,8 +79,9 @@ No intentional breaking changes.
 MINOR releases may include:
 
 - new features
-- additional extensions
-- new capabilities
+- additional capabilities
+- new extension implementations
+- additional subtitle formats
 
 Existing public contracts should remain compatible.
 
@@ -86,9 +93,10 @@ MAJOR releases may introduce:
 
 - breaking architectural changes
 - incompatible public API changes
+- contract changes
 - migration requirements
 
-Major releases require migration documentation.
+Major releases require appropriate migration documentation.
 
 ---
 
@@ -96,10 +104,16 @@ Major releases require migration documentation.
 
 A release requires:
 
-- passing tests
-- updated documentation
-- updated changelog
-- architectural review completed
+- intended release requirements are satisfied
+- tests pass
+- documentation is updated
+- architectural constraints remain satisfied
+- release notes or changelog information is updated
+
+Only capabilities included in the release scope are release requirements.
+
+Future architectural capabilities do not block an MVP release unless explicitly
+included in its scope.
 
 ---
 
@@ -115,4 +129,5 @@ Older releases may receive critical fixes when practical.
 
 The release strategy evolves conservatively.
 
-Changes require architectural review.
+Changes to versioning or release policy require appropriate architectural
+review and documentation updates.
