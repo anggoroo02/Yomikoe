@@ -82,14 +82,23 @@ def transcribe(audio_file: Path, verbose: bool = False):
         progress_total_seconds = progress.total_seconds
 
     try:
-        engine = FasterWhisperEngine(
-            device="cpu",
-        )
+        engine = FasterWhisperEngine()
+
+        initial_backend = engine.backend
+
+        typer.echo(f"Compute backend: {engine.backend}")
+
         pipeline_result = transcribe_audio(
             audio_file,
             engine,
             progress_callback=display_progress,
         )
+
+        if engine.backend is not initial_backend:
+            typer.echo(
+                f"CUDA unavailable during transcription. "
+                f"Falling back to {engine.backend}."
+            )
 
     except UnsupportedAudioFormatError as exc:
         exit_with_error(str(exc))
@@ -125,6 +134,7 @@ def transcribe(audio_file: Path, verbose: bool = False):
 
     typer.echo()
     typer.echo(f"Engine    : {engine.__class__.__name__}")
+    typer.echo(f"Backend   : {engine.backend}")
     typer.echo(f"Language  : {result.language}")
     typer.echo(f"Segments  : {len(result.segments)}")
     typer.echo(f"Output    : {output_file}")

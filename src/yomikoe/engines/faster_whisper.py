@@ -3,6 +3,10 @@ from collections.abc import Callable
 from faster_whisper import WhisperModel
 
 from yomikoe.audio import LoadedAudio
+from yomikoe.engines.backend import (
+    ComputeBackend,
+    resolve_backend,
+)
 from yomikoe.engines.models import (
     TranscriptionProgress,
     TranscriptionResult,
@@ -16,14 +20,28 @@ class FasterWhisperEngine:
     def __init__(
         self,
         model_name: str = "small",
-        device: str = "auto",
+        backend: ComputeBackend = ComputeBackend.AUTO,
         compute_type: str = "default",
     ) -> None:
+        self._model_name = model_name
+        self._compute_type = compute_type
+        self._requested_backend = backend
+
+        self._backend = resolve_backend(backend)
+
         self._model = WhisperModel(
             model_name,
-            device=device,
+            device=self._backend.value,
             compute_type=compute_type,
         )
+
+    class ComputeBackendError(RuntimeError):
+        """Raised when the selected compute backend cannot be used."""
+
+    @property
+    def backend(self) -> ComputeBackend:
+        """Return the resolved compute backend."""
+        return self._backend
 
     def transcribe(
         self,
@@ -37,7 +55,24 @@ class FasterWhisperEngine:
         audio_path = str(loaded_audio["path"])
         duration = loaded_audio["metadata"]["duration_seconds"]
 
-        segments, info = self._model.transcribe(audio_path)
+        try:
+            segments, info = self._model.transcribe(audio_path)
+        except RuntimeError:
+            if self._requested_backend is not ComputeBackend.AUTO:
+                raise
+
+            if self._backend is not ComputeBackend.CUDA:
+                raise
+
+            self._backend = ComputeBackend.CPU
+
+            self._model = WhisperModel(
+                self._model_name,
+                device=ComputeBackend.CPU.value,
+                compute_type=self._compute_type,
+            )
+
+            segments, info = self._model.transcribe(audio_path)
 
         result_segments = []
 
