@@ -37,6 +37,8 @@ Yomikoe currently uses [Faster-Whisper](https://github.com/SYSTRAN/faster-whispe
 
 The transcription engine is isolated behind an application-level interface, allowing alternative engines to be introduced without redesigning the subtitle generation workflow.
 
+The compute backend is automatically detected, using CUDA when available and falling back to CPU when necessary.
+
 ## 🚀 Installation
 
 > ⚠️ **Yomikoe is currently under development and has not yet reached a stable release.**
@@ -435,7 +437,8 @@ At the current stage:
 * The primary interface is the CLI
 * SRT is the currently implemented subtitle output format
 * Faster-Whisper is the current real transcription backend
-* GPU/CUDA configuration is still under development
+* GPU/CUDA is automatically detected when available
+* Transcription falls back to CPU when CUDA is unavailable
 * Transcription can be computationally expensive, especially on CPU
 * The project does not currently provide a GUI
 * Translation is not part of the current MVP
