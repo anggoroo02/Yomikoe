@@ -137,10 +137,15 @@ def transcribe(
     output_file = output or get_output_path(audio_file)
     output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    output_file.write_text(
-        srt,
-        encoding="utf-8",
-    )
+    try:
+        output_file.write_text(
+            srt,
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        exit_with_error(
+            f"Error: Could not write subtitle file: {output_file}\nReason: {exc}"
+        )
 
     typer.echo()
     typer.echo(f"Engine    : {engine.__class__.__name__}")
