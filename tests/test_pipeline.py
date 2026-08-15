@@ -8,6 +8,7 @@ from yomikoe.engines import (
     TranscriptionSegment,
 )
 from yomikoe.pipeline import transcribe_audio
+from yomikoe.pipeline.transcriber import transcribe
 
 
 class SpyTranscriptionEngine:
@@ -73,3 +74,21 @@ def test_transcribe_audio_forwards_progress_callback(
     )
 
     assert engine.received_callback is progress_callback
+
+
+def test_transcribe_returns_engine_result(
+    tmp_path: Path,
+) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    engine = SpyTranscriptionEngine()
+
+    result = transcribe(
+        audio_file,
+        engine,
+    )
+
+    assert result is engine.result
+    assert engine.received_audio is not None
+    assert engine.received_audio["path"] == audio_file

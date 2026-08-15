@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -59,3 +60,19 @@ def test_inspect_audio_returns_basic_metadata(tmp_path: Path) -> None:
     assert result["size_bytes"] == len(b"dummy audio")
     assert result["extension"] == ".mp3"
     assert result["duration_seconds"] is None
+
+
+def test_inspect_audio_handles_metadata_error(tmp_path: Path) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"invalid audio")
+
+    with patch(
+        "yomikoe.audio.inspector.MutagenFile",
+        side_effect=RuntimeError("metadata error"),
+    ):
+        metadata = inspect_audio(audio_file)
+
+    assert metadata["filename"] == "sample.mp3"
+    assert metadata["extension"] == ".mp3"
+    assert metadata["size_bytes"] == len(b"invalid audio")
+    assert metadata["duration_seconds"] is None
