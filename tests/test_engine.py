@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -8,26 +9,9 @@ from yomikoe.engines import FasterWhisperEngine, TranscriptionProgress
 from yomikoe.engines.backend import ComputeBackend
 
 
-def make_loaded_audio(
+def test_faster_whisper_engine_initializes_model(
     tmp_path: Path,
-    duration_seconds: float | None = 10.0,
-) -> LoadedAudio:
-    audio_file = tmp_path / "sample.mp3"
-    audio_file.write_bytes(b"dummy audio")
-
-    return LoadedAudio(
-        path=audio_file,
-        metadata={
-            "filename": "sample.mp3",
-            "path": str(audio_file.resolve()),
-            "size_bytes": len(b"dummy audio"),
-            "extension": ".mp3",
-            "duration_seconds": duration_seconds,
-        },
-    )
-
-
-def test_faster_whisper_engine_initializes_model(tmp_path: Path) -> None:
+) -> None:
     with patch("yomikoe.engines.faster_whisper.resolve_backend") as resolve_backend:
         resolve_backend.return_value = ComputeBackend.CPU
 
@@ -47,7 +31,7 @@ def test_faster_whisper_engine_initializes_model(tmp_path: Path) -> None:
 
 
 def test_faster_whisper_engine_maps_transcription_result(
-    tmp_path: Path,
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
 ) -> None:
     segments = [
         Mock(start=0.0, end=1.5, text="  こんにちは  "),
@@ -68,11 +52,11 @@ def test_faster_whisper_engine_maps_transcription_result(
         ):
             engine = FasterWhisperEngine(backend=ComputeBackend.CPU)
 
-    result = engine.transcribe(make_loaded_audio(tmp_path))
+    audio = loaded_audio_factory()
 
-    model.transcribe.assert_called_once_with(
-        str((tmp_path / "sample.mp3")),
-    )
+    result = engine.transcribe(audio)
+
+    model.transcribe.assert_called_once_with(str(audio["path"]))
 
     assert result.language == "ja"
     assert len(result.segments) == 2
@@ -87,7 +71,7 @@ def test_faster_whisper_engine_maps_transcription_result(
 
 
 def test_faster_whisper_engine_reports_progress(
-    tmp_path: Path,
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
 ) -> None:
     segments = [
         Mock(start=0.0, end=1.5, text="こんにちは"),
@@ -111,7 +95,7 @@ def test_faster_whisper_engine_reports_progress(
             engine = FasterWhisperEngine(backend=ComputeBackend.CPU)
 
     engine.transcribe(
-        make_loaded_audio(tmp_path, duration_seconds=10.0),
+        loaded_audio_factory(10.0),
         progress_callback=progress_callback,
     )
 
@@ -132,7 +116,7 @@ def test_faster_whisper_engine_reports_progress(
 
 
 def test_faster_whisper_engine_falls_back_to_cpu_on_auto_backend_error(
-    tmp_path: Path,
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
 ) -> None:
     segments = [
         Mock(start=0.0, end=1.0, text="こんにちは"),
@@ -155,7 +139,7 @@ def test_faster_whisper_engine_falls_back_to_cpu_on_auto_backend_error(
         ) as whisper_model:
             engine = FasterWhisperEngine(backend=ComputeBackend.AUTO)
 
-            result = engine.transcribe(make_loaded_audio(tmp_path))
+            result = engine.transcribe(loaded_audio_factory())
 
     assert engine.backend is ComputeBackend.CPU
     assert result.language == "ja"
@@ -173,7 +157,7 @@ def test_faster_whisper_engine_falls_back_to_cpu_on_auto_backend_error(
 
 
 def test_faster_whisper_engine_does_not_fallback_for_explicit_backend(
-    tmp_path: Path,
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
 ) -> None:
     model = Mock()
     model.transcribe.side_effect = RuntimeError("CUDA unavailable")
@@ -189,11 +173,11 @@ def test_faster_whisper_engine_does_not_fallback_for_explicit_backend(
             engine = FasterWhisperEngine(backend=ComputeBackend.CUDA)
 
             with pytest.raises(RuntimeError, match="CUDA unavailable"):
-                engine.transcribe(make_loaded_audio(tmp_path))
+                engine.transcribe(loaded_audio_factory())
 
 
 def test_faster_whisper_engine_does_not_fallback_when_auto_resolves_to_cpu(
-    tmp_path: Path,
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
 ) -> None:
     model = Mock()
     model.transcribe.side_effect = RuntimeError("CPU transcription failed")
@@ -208,8 +192,11 @@ def test_faster_whisper_engine_does_not_fallback_when_auto_resolves_to_cpu(
         ):
             engine = FasterWhisperEngine(backend=ComputeBackend.AUTO)
 
-            with pytest.raises(RuntimeError, match="CPU transcription failed"):
-                engine.transcribe(make_loaded_audio(tmp_path))
+            with pytest.raises(
+                RuntimeError,
+                match="CPU transcription failed",
+            ):
+                engine.transcribe(loaded_audio_factory())
 
     assert engine.backend is ComputeBackend.CPU
     model.transcribe.assert_called_once()

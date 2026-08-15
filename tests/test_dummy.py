@@ -1,30 +1,17 @@
-from pathlib import Path
+from collections.abc import Callable
 
-from yomikoe.audio.models import AudioMetadata, LoadedAudio
+from yomikoe.audio import LoadedAudio
 from yomikoe.engines import (
     DummyTranscriptionEngine,
     TranscriptionProgress,
 )
 
 
-def make_loaded_audio(duration: float | None) -> LoadedAudio:
-    metadata = AudioMetadata(
-        filename="sample.mp3",
-        path=str(Path("sample.mp3").resolve()),
-        size_bytes=100,
-        extension=".mp3",
-        duration_seconds=duration,
-    )
-
-    return LoadedAudio(
-        path=Path("sample.mp3"),
-        metadata=metadata,
-    )
-
-
-def test_dummy_engine_transcribes_audio() -> None:
+def test_dummy_engine_transcribes_audio(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
     engine = DummyTranscriptionEngine()
-    audio = make_loaded_audio(10.0)
+    audio = loaded_audio_factory(10.0)
 
     result = engine.transcribe(audio)
 
@@ -38,9 +25,11 @@ def test_dummy_engine_transcribes_audio() -> None:
     assert segment.text == "[Dummy transcription]"
 
 
-def test_dummy_engine_handles_unknown_duration() -> None:
+def test_dummy_engine_handles_unknown_duration(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
     engine = DummyTranscriptionEngine()
-    audio = make_loaded_audio(None)
+    audio = loaded_audio_factory(None)
 
     result = engine.transcribe(audio)
 
@@ -51,9 +40,11 @@ def test_dummy_engine_handles_unknown_duration() -> None:
     assert segment.text == "[Dummy transcription]"
 
 
-def test_dummy_engine_reports_progress() -> None:
+def test_dummy_engine_reports_progress(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
     engine = DummyTranscriptionEngine()
-    audio = make_loaded_audio(10.0)
+    audio = loaded_audio_factory(10.0)
 
     progress_updates: list[TranscriptionProgress] = []
 
@@ -65,17 +56,19 @@ def test_dummy_engine_reports_progress() -> None:
         progress_callback=progress_callback,
     )
 
-    assert len(progress_updates) == 1
+    assert progress_updates == [
+        TranscriptionProgress(
+            current_seconds=10.0,
+            total_seconds=10.0,
+        )
+    ]
 
-    progress = progress_updates[0]
 
-    assert progress.current_seconds == 10.0
-    assert progress.total_seconds == 10.0
-
-
-def test_dummy_engine_does_not_report_progress_without_duration() -> None:
+def test_dummy_engine_does_not_report_progress_without_duration(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
     engine = DummyTranscriptionEngine()
-    audio = make_loaded_audio(None)
+    audio = loaded_audio_factory(None)
 
     progress_updates: list[TranscriptionProgress] = []
 
