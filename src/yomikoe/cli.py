@@ -48,7 +48,16 @@ def get_output_path(audio_file: Path) -> Path:
 
 
 @app.command()
-def transcribe(audio_file: Path, verbose: bool = False):
+def transcribe(
+    audio_file: Path,
+    verbose: bool = False,
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output subtitle file path.",
+    ),
+):
     """Transcribe an audio file."""
 
     if not audio_file.exists():
@@ -125,7 +134,8 @@ def transcribe(audio_file: Path, verbose: bool = False):
 
     srt = write_srt(subtitle)
 
-    output_file = get_output_path(audio_file)
+    output_file = output or get_output_path(audio_file)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
 
     output_file.write_text(
         srt,
