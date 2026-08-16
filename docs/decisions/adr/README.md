@@ -101,9 +101,10 @@ The numeric identifier is assigned sequentially.
 
 ## Current ADRs
 
-| ID      | Decision                  | Status   |
-| ------- | ------------------------- | -------- |
-| ADR-001 | MVP Architecture Baseline | Accepted |
+| ID                                                                     | Decision                     | Status   |
+| :--------------------------------------------------------------------- | :--------------------------- | :------- |
+| [ADR-001](/docs/decisions/adr/ADR-001-mvp-architecture-baseline.md)    | MVP Architecture Baseline    | Accepted |
+| [ADR-002](/docs/decisions/adr/ADR-002-canonical-domain-terminology.md) | Canonical Domain Terminology | Accepted |
 
 ---
 
