@@ -57,6 +57,12 @@ def transcribe(
         "-o",
         help="Output subtitle file path.",
     ),
+    language: str = typer.Option(
+        "ja",
+        "--language",
+        "-l",
+        help="Transcription language code.",
+    ),
 ):
     """Transcribe an audio file."""
 
@@ -91,7 +97,9 @@ def transcribe(
         progress_total_seconds = progress.total_seconds
 
     try:
-        engine = FasterWhisperEngine()
+        engine = FasterWhisperEngine(
+            language=language,
+        )
 
         initial_backend = engine.backend
 

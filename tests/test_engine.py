@@ -56,7 +56,10 @@ def test_faster_whisper_engine_maps_transcription_result(
 
     result = engine.transcribe(audio)
 
-    model.transcribe.assert_called_once_with(str(audio["path"]))
+    model.transcribe.assert_called_once_with(
+        str(audio["path"]),
+        language="ja",
+    )
 
     assert result.language == "ja"
     assert len(result.segments) == 2
@@ -68,6 +71,42 @@ def test_faster_whisper_engine_maps_transcription_result(
     assert result.segments[1].start == 2.0
     assert result.segments[1].end == 3.5
     assert result.segments[1].text == "世界"
+
+
+def test_faster_whisper_engine_uses_explicit_language(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
+    segments = [
+        Mock(start=0.0, end=1.5, text=" Hello "),
+    ]
+    info = Mock(language="en")
+
+    model = Mock()
+    model.transcribe.return_value = (segments, info)
+
+    with patch(
+        "yomikoe.engines.faster_whisper.resolve_backend",
+        return_value=ComputeBackend.CPU,
+    ):
+        with patch(
+            "yomikoe.engines.faster_whisper.WhisperModel",
+            return_value=model,
+        ):
+            engine = FasterWhisperEngine(
+                backend=ComputeBackend.CPU,
+                language="en",
+            )
+
+    audio = loaded_audio_factory()
+
+    result = engine.transcribe(audio)
+
+    model.transcribe.assert_called_once_with(
+        str(audio["path"]),
+        language="en",
+    )
+
+    assert result.language == "en"
 
 
 def test_faster_whisper_engine_reports_progress(
