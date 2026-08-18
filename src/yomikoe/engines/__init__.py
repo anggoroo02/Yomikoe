@@ -1,3 +1,5 @@
+from .backend import ComputeBackend
+from .config import TranscriptionConfig
 from .dummy import DummyTranscriptionEngine
 from .exceptions import EngineError
 from .faster_whisper import FasterWhisperEngine
@@ -9,6 +11,8 @@ from .models import (
 )
 
 __all__ = [
+    "ComputeBackend",
+    "TranscriptionConfig",
     "DummyTranscriptionEngine",
     "EngineError",
     "TranscriptionEngine",

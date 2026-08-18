@@ -4,7 +4,12 @@ import typer
 
 from yomikoe import __version__
 from yomikoe.audio import UnsupportedAudioFormatError
-from yomikoe.engines import FasterWhisperEngine, TranscriptionProgress
+from yomikoe.engines import (
+    ComputeBackend,
+    FasterWhisperEngine,
+    TranscriptionConfig,
+    TranscriptionProgress,
+)
 from yomikoe.pipeline import transcribe_audio
 from yomikoe.subtitle import (
     generate_subtitle,
@@ -57,11 +62,26 @@ def transcribe(
         "-o",
         help="Output subtitle file path.",
     ),
+    model: str = typer.Option(
+        "small",
+        "--model",
+        help="Whisper model name.",
+    ),
     language: str = typer.Option(
         "ja",
         "--language",
         "-l",
         help="Transcription language code.",
+    ),
+    device: ComputeBackend = typer.Option(
+        ComputeBackend.AUTO,
+        "--device",
+        help="Compute device: auto, cpu, or cuda.",
+    ),
+    compute_type: str = typer.Option(
+        "default",
+        "--compute-type",
+        help="Whisper compute type.",
     ),
 ):
     """Transcribe an audio file."""
@@ -97,9 +117,14 @@ def transcribe(
         progress_total_seconds = progress.total_seconds
 
     try:
-        engine = FasterWhisperEngine(
+        config = TranscriptionConfig(
+            model=model,
             language=language,
+            backend=device,
+            compute_type=compute_type,
         )
+
+        engine = FasterWhisperEngine(config=config)
 
         initial_backend = engine.backend
 

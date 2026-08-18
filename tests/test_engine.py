@@ -7,20 +7,24 @@ import pytest
 from yomikoe.audio import LoadedAudio
 from yomikoe.engines import FasterWhisperEngine, TranscriptionProgress
 from yomikoe.engines.backend import ComputeBackend
+from yomikoe.engines.config import TranscriptionConfig
 
 
 def test_faster_whisper_engine_initializes_model(
     tmp_path: Path,
 ) -> None:
+    config = TranscriptionConfig(
+        model="tiny",
+        backend=ComputeBackend.CPU,
+        compute_type="int8",
+        language="en",
+    )
+
     with patch("yomikoe.engines.faster_whisper.resolve_backend") as resolve_backend:
         resolve_backend.return_value = ComputeBackend.CPU
 
         with patch("yomikoe.engines.faster_whisper.WhisperModel") as whisper_model:
-            FasterWhisperEngine(
-                model_name="tiny",
-                backend=ComputeBackend.CPU,
-                compute_type="int8",
-            )
+            FasterWhisperEngine(config=config)
 
             resolve_backend.assert_called_once_with(ComputeBackend.CPU)
             whisper_model.assert_called_once_with(
@@ -42,6 +46,10 @@ def test_faster_whisper_engine_maps_transcription_result(
     model = Mock()
     model.transcribe.return_value = (segments, info)
 
+    config = TranscriptionConfig(
+        backend=ComputeBackend.CPU,
+    )
+
     with patch(
         "yomikoe.engines.faster_whisper.resolve_backend",
         return_value=ComputeBackend.CPU,
@@ -50,7 +58,7 @@ def test_faster_whisper_engine_maps_transcription_result(
             "yomikoe.engines.faster_whisper.WhisperModel",
             return_value=model,
         ):
-            engine = FasterWhisperEngine(backend=ComputeBackend.CPU)
+            engine = FasterWhisperEngine(config=config)
 
     audio = loaded_audio_factory()
 
@@ -84,6 +92,11 @@ def test_faster_whisper_engine_uses_explicit_language(
     model = Mock()
     model.transcribe.return_value = (segments, info)
 
+    config = TranscriptionConfig(
+        backend=ComputeBackend.CPU,
+        language="en",
+    )
+
     with patch(
         "yomikoe.engines.faster_whisper.resolve_backend",
         return_value=ComputeBackend.CPU,
@@ -92,10 +105,7 @@ def test_faster_whisper_engine_uses_explicit_language(
             "yomikoe.engines.faster_whisper.WhisperModel",
             return_value=model,
         ):
-            engine = FasterWhisperEngine(
-                backend=ComputeBackend.CPU,
-                language="en",
-            )
+            engine = FasterWhisperEngine(config=config)
 
     audio = loaded_audio_factory()
 
@@ -121,6 +131,10 @@ def test_faster_whisper_engine_reports_progress(
     model = Mock()
     model.transcribe.return_value = (segments, info)
 
+    config = TranscriptionConfig(
+        backend=ComputeBackend.CPU,
+    )
+
     progress_callback = Mock()
 
     with patch(
@@ -131,7 +145,7 @@ def test_faster_whisper_engine_reports_progress(
             "yomikoe.engines.faster_whisper.WhisperModel",
             return_value=model,
         ):
-            engine = FasterWhisperEngine(backend=ComputeBackend.CPU)
+            engine = FasterWhisperEngine(config=config)
 
     engine.transcribe(
         loaded_audio_factory(10.0),
@@ -168,6 +182,13 @@ def test_faster_whisper_engine_falls_back_to_cpu_on_auto_backend_error(
     second_model = Mock()
     second_model.transcribe.return_value = (segments, info)
 
+    config = TranscriptionConfig(
+        model="medium",
+        language="ja",
+        backend=ComputeBackend.AUTO,
+        compute_type="float16",
+    )
+
     with patch(
         "yomikoe.engines.faster_whisper.resolve_backend",
         return_value=ComputeBackend.CUDA,
@@ -176,7 +197,7 @@ def test_faster_whisper_engine_falls_back_to_cpu_on_auto_backend_error(
             "yomikoe.engines.faster_whisper.WhisperModel",
             side_effect=[first_model, second_model],
         ) as whisper_model:
-            engine = FasterWhisperEngine(backend=ComputeBackend.AUTO)
+            engine = FasterWhisperEngine(config=config)
 
             result = engine.transcribe(loaded_audio_factory())
 
@@ -185,14 +206,21 @@ def test_faster_whisper_engine_falls_back_to_cpu_on_auto_backend_error(
     assert result.segments[0].text == "こんにちは"
 
     assert whisper_model.call_count == 2
+    assert whisper_model.call_args_list[0].args == ("medium",)
     assert whisper_model.call_args_list[0].kwargs == {
         "device": "cuda",
-        "compute_type": "default",
+        "compute_type": "float16",
     }
+    assert whisper_model.call_args_list[1].args == ("medium",)
     assert whisper_model.call_args_list[1].kwargs == {
         "device": "cpu",
-        "compute_type": "default",
+        "compute_type": "float16",
     }
+
+    first_model.transcribe.assert_called_once_with(
+        str(loaded_audio_factory()["path"]),
+        language="ja",
+    )
 
 
 def test_faster_whisper_engine_does_not_fallback_for_explicit_backend(
@@ -200,6 +228,10 @@ def test_faster_whisper_engine_does_not_fallback_for_explicit_backend(
 ) -> None:
     model = Mock()
     model.transcribe.side_effect = RuntimeError("CUDA unavailable")
+
+    config = TranscriptionConfig(
+        backend=ComputeBackend.CUDA,
+    )
 
     with patch(
         "yomikoe.engines.faster_whisper.resolve_backend",
@@ -209,10 +241,12 @@ def test_faster_whisper_engine_does_not_fallback_for_explicit_backend(
             "yomikoe.engines.faster_whisper.WhisperModel",
             return_value=model,
         ):
-            engine = FasterWhisperEngine(backend=ComputeBackend.CUDA)
+            engine = FasterWhisperEngine(config=config)
 
             with pytest.raises(RuntimeError, match="CUDA unavailable"):
                 engine.transcribe(loaded_audio_factory())
+
+    assert engine.backend is ComputeBackend.CUDA
 
 
 def test_faster_whisper_engine_does_not_fallback_when_auto_resolves_to_cpu(
@@ -220,6 +254,10 @@ def test_faster_whisper_engine_does_not_fallback_when_auto_resolves_to_cpu(
 ) -> None:
     model = Mock()
     model.transcribe.side_effect = RuntimeError("CPU transcription failed")
+
+    config = TranscriptionConfig(
+        backend=ComputeBackend.AUTO,
+    )
 
     with patch(
         "yomikoe.engines.faster_whisper.resolve_backend",
@@ -229,7 +267,7 @@ def test_faster_whisper_engine_does_not_fallback_when_auto_resolves_to_cpu(
             "yomikoe.engines.faster_whisper.WhisperModel",
             return_value=model,
         ):
-            engine = FasterWhisperEngine(backend=ComputeBackend.AUTO)
+            engine = FasterWhisperEngine(config=config)
 
             with pytest.raises(
                 RuntimeError,

@@ -6,6 +6,8 @@ from typer.testing import CliRunner
 
 from yomikoe.cli import app
 from yomikoe.engines import (
+    ComputeBackend,
+    TranscriptionConfig,
     TranscriptionEngine,
     TranscriptionProgress,
     TranscriptionResult,
@@ -125,7 +127,7 @@ def test_transcribe_writes_default_output(tmp_path: Path) -> None:
     assert f"Output    : {output_file}" in result.stdout
 
 
-def test_transcribe_uses_default_language(tmp_path: Path) -> None:
+def test_transcribe_uses_default_engine_config(tmp_path: Path) -> None:
     audio_file = tmp_path / "sample.mp3"
     audio_file.write_bytes(b"dummy audio")
 
@@ -148,10 +150,13 @@ def test_transcribe_uses_default_language(tmp_path: Path) -> None:
         )
 
     assert result.exit_code == 0
-    engine_class.assert_called_once_with(language="ja")
+
+    engine_class.assert_called_once_with(
+        config=TranscriptionConfig(),
+    )
 
 
-def test_transcribe_uses_explicit_language(tmp_path: Path) -> None:
+def test_transcribe_uses_explicit_engine_config(tmp_path: Path) -> None:
     audio_file = tmp_path / "sample.mp3"
     audio_file.write_bytes(b"dummy audio")
 
@@ -173,13 +178,44 @@ def test_transcribe_uses_explicit_language(tmp_path: Path) -> None:
             [
                 "transcribe",
                 str(audio_file),
+                "--model",
+                "medium",
                 "--language",
                 "en",
+                "--device",
+                "cuda",
+                "--compute-type",
+                "float16",
             ],
         )
 
     assert result.exit_code == 0
-    engine_class.assert_called_once_with(language="en")
+
+    engine_class.assert_called_once_with(
+        config=TranscriptionConfig(
+            model="medium",
+            language="en",
+            backend=ComputeBackend.CUDA,
+            compute_type="float16",
+        ),
+    )
+
+
+def test_transcribe_rejects_invalid_device(tmp_path: Path) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    result = runner.invoke(
+        app,
+        [
+            "transcribe",
+            str(audio_file),
+            "--device",
+            "tpu",
+        ],
+    )
+
+    assert result.exit_code != 0
 
 
 def test_transcribe_writes_custom_output(tmp_path: Path) -> None:

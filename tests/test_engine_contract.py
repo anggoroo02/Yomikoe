@@ -8,6 +8,7 @@ from yomikoe.audio import LoadedAudio
 from yomikoe.engines import (
     DummyTranscriptionEngine,
     FasterWhisperEngine,
+    TranscriptionConfig,
     TranscriptionEngine,
     TranscriptionResult,
     TranscriptionSegment,
@@ -57,7 +58,9 @@ def make_faster_whisper_engine() -> TranscriptionEngine:
             return_value=model,
         ):
             return FasterWhisperEngine(
-                backend=ComputeBackend.CPU,
+                config=TranscriptionConfig(
+                    backend=ComputeBackend.CPU,
+                ),
             )
 
 

@@ -7,6 +7,7 @@ from yomikoe.engines.backend import (
     ComputeBackend,
     resolve_backend,
 )
+from yomikoe.engines.config import TranscriptionConfig
 from yomikoe.engines.models import (
     TranscriptionProgress,
     TranscriptionResult,
@@ -19,22 +20,17 @@ class FasterWhisperEngine:
 
     def __init__(
         self,
-        model_name: str = "small",
-        backend: ComputeBackend = ComputeBackend.AUTO,
-        compute_type: str = "default",
-        language: str = "ja",
+        config: TranscriptionConfig,
     ) -> None:
-        self._model_name = model_name
-        self._compute_type = compute_type
-        self._language = language
-        self._requested_backend = backend
+        self._config = config
+        self._requested_backend = config.backend
 
-        self._backend = resolve_backend(backend)
+        self._backend = resolve_backend(config.backend)
 
         self._model = WhisperModel(
-            model_name,
+            config.model,
             device=self._backend.value,
-            compute_type=compute_type,
+            compute_type=config.compute_type,
         )
 
     class ComputeBackendError(RuntimeError):
@@ -60,7 +56,7 @@ class FasterWhisperEngine:
         try:
             segments, info = self._model.transcribe(
                 audio_path,
-                language=self._language,
+                language=self._config.language,
             )
         except RuntimeError:
             if self._requested_backend is not ComputeBackend.AUTO:
@@ -72,14 +68,14 @@ class FasterWhisperEngine:
             self._backend = ComputeBackend.CPU
 
             self._model = WhisperModel(
-                self._model_name,
+                self._config.model,
                 device=ComputeBackend.CPU.value,
-                compute_type=self._compute_type,
+                compute_type=self._config.compute_type,
             )
 
             segments, info = self._model.transcribe(
                 audio_path,
-                language=self._language,
+                language=self._config.language,
             )
 
         result_segments = []
