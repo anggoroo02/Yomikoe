@@ -22,9 +22,11 @@ class FasterWhisperEngine:
         model_name: str = "small",
         backend: ComputeBackend = ComputeBackend.AUTO,
         compute_type: str = "default",
+        language: str = "ja",
     ) -> None:
         self._model_name = model_name
         self._compute_type = compute_type
+        self._language = language
         self._requested_backend = backend
 
         self._backend = resolve_backend(backend)
@@ -56,7 +58,10 @@ class FasterWhisperEngine:
         duration = loaded_audio["metadata"]["duration_seconds"]
 
         try:
-            segments, info = self._model.transcribe(audio_path)
+            segments, info = self._model.transcribe(
+                audio_path,
+                language=self._language,
+            )
         except RuntimeError:
             if self._requested_backend is not ComputeBackend.AUTO:
                 raise
@@ -72,7 +77,10 @@ class FasterWhisperEngine:
                 compute_type=self._compute_type,
             )
 
-            segments, info = self._model.transcribe(audio_path)
+            segments, info = self._model.transcribe(
+                audio_path,
+                language=self._language,
+            )
 
         result_segments = []
 

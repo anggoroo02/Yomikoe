@@ -125,6 +125,63 @@ def test_transcribe_writes_default_output(tmp_path: Path) -> None:
     assert f"Output    : {output_file}" in result.stdout
 
 
+def test_transcribe_uses_default_language(tmp_path: Path) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    engine = make_engine()
+    pipeline_result = make_pipeline_result(audio_file)
+
+    with (
+        patch(
+            "yomikoe.cli.FasterWhisperEngine",
+            return_value=engine,
+        ) as engine_class,
+        patch(
+            "yomikoe.cli.transcribe_audio",
+            return_value=pipeline_result,
+        ),
+    ):
+        result = runner.invoke(
+            app,
+            ["transcribe", str(audio_file)],
+        )
+
+    assert result.exit_code == 0
+    engine_class.assert_called_once_with(language="ja")
+
+
+def test_transcribe_uses_explicit_language(tmp_path: Path) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    engine = make_engine()
+    pipeline_result = make_pipeline_result(audio_file)
+
+    with (
+        patch(
+            "yomikoe.cli.FasterWhisperEngine",
+            return_value=engine,
+        ) as engine_class,
+        patch(
+            "yomikoe.cli.transcribe_audio",
+            return_value=pipeline_result,
+        ),
+    ):
+        result = runner.invoke(
+            app,
+            [
+                "transcribe",
+                str(audio_file),
+                "--language",
+                "en",
+            ],
+        )
+
+    assert result.exit_code == 0
+    engine_class.assert_called_once_with(language="en")
+
+
 def test_transcribe_writes_custom_output(tmp_path: Path) -> None:
     audio_file = tmp_path / "sample.mp3"
     audio_file.write_bytes(b"dummy audio")

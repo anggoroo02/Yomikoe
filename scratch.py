@@ -5,7 +5,7 @@ from yomikoe.engines import FasterWhisperEngine
 from yomikoe.subtitle import (
     generate_subtitle,
     write_srt,
-    )
+)
 
 audio = load_audio(Path("sample-JP.m4a"))
 
