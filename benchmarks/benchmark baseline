@@ -1,0 +1,76 @@
+baseline A
+
+run 1
+Input
+  File       : sample-JP.mp3
+  Duration   : 00:00:13
+
+Configuration
+  Model      : small
+  Language   : ja
+  Device     : cpu
+  Compute    : default
+
+Performance
+  Backend    : cpu
+  Engine init: 1.86 s
+  Runtime    : 3.69 s
+  RTF        : 0.275
+
+Transcription
+  Language   : ja
+  Segments   : 3
+  Characters : 59
+
+run 2
+Input
+  File       : sample-JP.mp3
+  Duration   : 00:00:13
+
+Configuration
+  Model      : small
+  Language   : ja
+  Device     : cpu
+  Compute    : default
+
+Performance
+  Backend    : cpu
+  Engine init: 1.77 s
+  Runtime    : 3.48 s
+  RTF        : 0.260
+
+Transcription
+  Language   : ja
+  Segments   : 3
+  Characters : 59
+
+run 3
+Input
+  File       : sample-JP.mp3
+  Duration   : 00:00:13
+
+Configuration
+  Model      : small
+  Language   : ja
+  Device     : cpu
+  Compute    : default
+
+Performance
+  Backend    : cpu
+  Engine init: 1.61 s
+  Runtime    : 3.53 s
+  RTF        : 0.263
+
+Transcription
+  Language   : ja
+  Segments   : 3
+  Characters : 59
+
+Baseline A — [sample-JP.mp3](/sample-JP.mp3)
+| Metric      | Run 1  | Run 2  | Run 3  | Mean   |
+| :---------- | :----- | :----- | :----- | :----- |
+| Engine init | 1.86 s | 1.77 s | 1.61 s | 1.75 s |
+| Runtime     | 3.69 s | 3.48 s | 3.53 s | 3.57 s |
+| RTF         | 0.275  | 0.260  | 0.263  | 0.266  |
+| Segments    | 3      | 3      | 3      | 3      |
+| Characters  | 59     | 59     | 59     | 59     |

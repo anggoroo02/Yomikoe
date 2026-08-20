@@ -33,3 +33,6 @@ Thumbs.db
 
 # Local model artifacts
 models/
+
+# Dev note
+notes/
