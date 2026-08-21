@@ -9,7 +9,6 @@ from yomikoe.engines import (
 )
 from yomikoe.pipeline.models import PipelineResult
 from yomikoe.postprocessing import (
-    IdentityTranscriptionProcessor,
     TranscriptionProcessor,
 )
 
@@ -36,10 +35,8 @@ def transcribe_audio(
         progress_callback=progress_callback,
     )
 
-    if processor is None:
-        processor = IdentityTranscriptionProcessor()
-
-    transcription = processor.process(transcription)
+    if processor is not None:
+        transcription = processor.process(transcription)
 
     return PipelineResult(
         audio=loaded_audio,
