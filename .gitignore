@@ -36,3 +36,6 @@ models/
 
 # Dev note
 notes/
+
+# samples
+sample_data/
