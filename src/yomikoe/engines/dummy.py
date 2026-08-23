@@ -21,8 +21,10 @@ class DummyTranscriptionEngine:
         | None = None,
     ) -> TranscriptionResult:
         duration = loaded_audio["metadata"]["duration_seconds"]
-        segment_end = duration or 0.0
-
+        if duration is None:
+            segment_end = 1.0
+        else:
+            segment_end = duration
         segment = TranscriptionSegment(
             start=0.0,
             end=segment_end,
