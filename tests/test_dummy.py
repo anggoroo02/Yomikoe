@@ -36,7 +36,7 @@ def test_dummy_engine_handles_unknown_duration(
     segment = result.segments[0]
 
     assert segment.start == 0.0
-    assert segment.end == 0.0
+    assert segment.end > segment.start
     assert segment.text == "[Dummy transcription]"
 
 

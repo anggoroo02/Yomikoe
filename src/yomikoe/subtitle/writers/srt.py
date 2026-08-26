@@ -1,19 +1,29 @@
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+
 from yomikoe.subtitle.models import Subtitle
 
 
 def format_timestamp(seconds: float) -> str:
     """Convert seconds to SRT timestamp."""
 
-    milliseconds = int(round(seconds * 1000))
+    try:
+        value = Decimal(str(seconds))
+    except InvalidOperation, ValueError:
+        raise ValueError("timestamp must be finite and non-negative") from None
 
-    hours = milliseconds // 3_600_000
-    milliseconds %= 3_600_000
+    if not value.is_finite() or value < 0:
+        raise ValueError("timestamp must be finite and non-negative")
 
-    minutes = milliseconds // 60_000
-    milliseconds %= 60_000
+    milliseconds = int(
+        (value * 1000).quantize(
+            Decimal("1"),
+            rounding=ROUND_HALF_UP,
+        )
+    )
 
-    secs = milliseconds // 1000
-    milliseconds %= 1000
+    hours, milliseconds = divmod(milliseconds, 3_600_000)
+    minutes, milliseconds = divmod(milliseconds, 60_000)
+    secs, milliseconds = divmod(milliseconds, 1000)
 
     return f"{hours:02}:{minutes:02}:{secs:02},{milliseconds:03}"
 
