@@ -5,7 +5,13 @@ from unittest.mock import Mock, patch
 import pytest
 
 from yomikoe.audio import LoadedAudio
-from yomikoe.engines import FasterWhisperEngine, TranscriptionProgress
+from yomikoe.engines import (
+    EngineConfigurationError,
+    EngineError,
+    EngineTranscriptionError,
+    FasterWhisperEngine,
+    TranscriptionProgress,
+)
 from yomikoe.engines.backend import ComputeBackend
 from yomikoe.engines.config import TranscriptionConfig
 
@@ -243,7 +249,10 @@ def test_faster_whisper_engine_does_not_fallback_for_explicit_backend(
         ):
             engine = FasterWhisperEngine(config=config)
 
-            with pytest.raises(RuntimeError, match="CUDA unavailable"):
+            with pytest.raises(
+                EngineTranscriptionError,
+                match="transcription failed: CUDA unavailable",
+            ):
                 engine.transcribe(loaded_audio_factory())
 
     assert engine.backend is ComputeBackend.CUDA
@@ -270,10 +279,69 @@ def test_faster_whisper_engine_does_not_fallback_when_auto_resolves_to_cpu(
             engine = FasterWhisperEngine(config=config)
 
             with pytest.raises(
-                RuntimeError,
-                match="CPU transcription failed",
+                EngineTranscriptionError,
+                match="transcription failed: CPU transcription failed",
             ):
                 engine.transcribe(loaded_audio_factory())
 
     assert engine.backend is ComputeBackend.CPU
     model.transcribe.assert_called_once()
+
+
+def test_engine_configuration_error_is_engine_error() -> None:
+    error = EngineConfigurationError("configuration failed")
+
+    assert isinstance(error, EngineError)
+
+
+def test_engine_transcription_error_is_engine_error() -> None:
+    error = EngineTranscriptionError("transcription failed")
+
+    assert isinstance(error, EngineError)
+
+
+def test_faster_whisper_engine_raises_on_model_initialization_failure() -> None:
+    config = TranscriptionConfig(
+        backend=ComputeBackend.CPU,
+    )
+
+    with patch(
+        "yomikoe.engines.faster_whisper.resolve_backend",
+        return_value=ComputeBackend.CPU,
+    ):
+        with patch(
+            "yomikoe.engines.faster_whisper.WhisperModel",
+            side_effect=RuntimeError("model initialization failed"),
+        ):
+            with pytest.raises(
+                EngineConfigurationError,
+                match="failed to initialize transcription engine",
+            ):
+                FasterWhisperEngine(config=config)
+
+
+def test_faster_whisper_engine_raises_transcription_error_on_failure(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
+    model = Mock()
+    model.transcribe.side_effect = RuntimeError("transcription failed")
+
+    config = TranscriptionConfig(
+        backend=ComputeBackend.CPU,
+    )
+
+    with patch(
+        "yomikoe.engines.faster_whisper.resolve_backend",
+        return_value=ComputeBackend.CPU,
+    ):
+        with patch(
+            "yomikoe.engines.faster_whisper.WhisperModel",
+            return_value=model,
+        ):
+            engine = FasterWhisperEngine(config=config)
+
+            with pytest.raises(
+                EngineTranscriptionError,
+                match="transcription failed",
+            ):
+                engine.transcribe(loaded_audio_factory())
