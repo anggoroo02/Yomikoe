@@ -133,3 +133,14 @@ def test_transcription_result_accepts_empty_segments() -> None:
     result = TranscriptionResult(language="ja")
 
     assert result.segments == []
+
+
+@pytest.mark.parametrize("segments", [None, "invalid", [object()]])
+def test_transcription_result_rejects_invalid_segments(
+    segments: object,
+) -> None:
+    with pytest.raises((TypeError, ValueError)):
+        TranscriptionResult(
+            language="ja",
+            segments=segments,  # type: ignore[arg-type]
+        )

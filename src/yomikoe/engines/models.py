@@ -63,6 +63,10 @@ class TranscriptionResult:
         if not self.language.strip():
             raise ValueError("language must not be empty or whitespace")
 
+        for segment in self.segments:
+            if not isinstance(segment, TranscriptionSegment):
+                raise TypeError("segments must contain TranscriptionSegment instances")
+
         for previous, current in zip(self.segments, self.segments[1:]):
             if current.start < previous.start:
                 raise ValueError("segments must be ordered by start time")
