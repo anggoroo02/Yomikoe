@@ -345,3 +345,85 @@ def test_faster_whisper_engine_raises_transcription_error_on_failure(
                 match="transcription failed",
             ):
                 engine.transcribe(loaded_audio_factory())
+
+
+def test_faster_whisper_engine_falls_back_to_cpu_on_auto_backend_initialization_error(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
+    segments = [
+        Mock(start=0.0, end=1.0, text="こんにちは"),
+    ]
+    info = Mock(language="ja")
+
+    cpu_model = Mock()
+    cpu_model.transcribe.return_value = (segments, info)
+
+    config = TranscriptionConfig(
+        model="medium",
+        language="ja",
+        backend=ComputeBackend.AUTO,
+        compute_type="float16",
+    )
+
+    with patch(
+        "yomikoe.engines.faster_whisper.resolve_backend",
+        return_value=ComputeBackend.CUDA,
+    ):
+        with patch(
+            "yomikoe.engines.faster_whisper.WhisperModel",
+            side_effect=[
+                RuntimeError("CUDA initialization failed"),
+                cpu_model,
+            ],
+        ) as whisper_model:
+            engine = FasterWhisperEngine(config=config)
+
+            result = engine.transcribe(loaded_audio_factory())
+
+    assert engine.backend is ComputeBackend.CPU
+    assert result.language == "ja"
+    assert result.segments[0].text == "こんにちは"
+
+    assert whisper_model.call_count == 2
+
+    assert whisper_model.call_args_list[0].args == ("medium",)
+    assert whisper_model.call_args_list[0].kwargs == {
+        "device": "cuda",
+        "compute_type": "float16",
+    }
+
+    assert whisper_model.call_args_list[1].args == ("medium",)
+    assert whisper_model.call_args_list[1].kwargs == {
+        "device": "cpu",
+        "compute_type": "float16",
+    }
+
+
+def test_faster_whisper_engine_raises_transcription_error_when_cpu_fallback_fails(
+    loaded_audio_factory: Callable[[float | None], LoadedAudio],
+) -> None:
+    first_model = Mock()
+    first_model.transcribe.side_effect = RuntimeError("CUDA unavailable")
+
+    second_model = Mock()
+    second_model.transcribe.side_effect = RuntimeError("CPU transcription failed")
+
+    config = TranscriptionConfig(
+        backend=ComputeBackend.AUTO,
+    )
+
+    with patch(
+        "yomikoe.engines.faster_whisper.resolve_backend",
+        return_value=ComputeBackend.CUDA,
+    ):
+        with patch(
+            "yomikoe.engines.faster_whisper.WhisperModel",
+            side_effect=[first_model, second_model],
+        ):
+            engine = FasterWhisperEngine(config=config)
+
+            with pytest.raises(
+                EngineTranscriptionError,
+                match="CPU transcription failed",
+            ):
+                engine.transcribe(loaded_audio_factory())

@@ -38,9 +38,26 @@ class FasterWhisperEngine:
                 compute_type=config.compute_type,
             )
         except RuntimeError as exc:
-            raise EngineConfigurationError(
-                f"failed to initialize transcription engine: {exc}"
-            ) from exc
+            if (
+                self._requested_backend is ComputeBackend.AUTO
+                and self._backend is ComputeBackend.CUDA
+            ):
+                self._backend = ComputeBackend.CPU
+
+                try:
+                    self._model = WhisperModel(
+                        config.model,
+                        device=ComputeBackend.CPU.value,
+                        compute_type=config.compute_type,
+                    )
+                except RuntimeError as cpu_exc:
+                    raise EngineConfigurationError(
+                        f"failed to initialize transcription engine: {cpu_exc}"
+                    ) from cpu_exc
+            else:
+                raise EngineConfigurationError(
+                    f"failed to initialize transcription engine: {exc}"
+                ) from exc
 
     @property
     def backend(self) -> ComputeBackend:
@@ -79,10 +96,13 @@ class FasterWhisperEngine:
                 compute_type=self._config.compute_type,
             )
 
-            segments, info = self._model.transcribe(
-                audio_path,
-                language=self._config.language,
-            )
+            try:
+                segments, info = self._model.transcribe(
+                    audio_path,
+                    language=self._config.language,
+                )
+            except RuntimeError as exc:
+                raise EngineTranscriptionError(f"transcription failed: {exc}") from exc
 
         result_segments = []
 
