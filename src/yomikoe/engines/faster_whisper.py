@@ -3,6 +3,10 @@ from collections.abc import Callable
 from faster_whisper import WhisperModel
 
 from yomikoe.audio import LoadedAudio
+from yomikoe.engines import (
+    EngineConfigurationError,
+    EngineTranscriptionError,
+)
 from yomikoe.engines.backend import (
     ComputeBackend,
     resolve_backend,
@@ -27,14 +31,33 @@ class FasterWhisperEngine:
 
         self._backend = resolve_backend(config.backend)
 
-        self._model = WhisperModel(
-            config.model,
-            device=self._backend.value,
-            compute_type=config.compute_type,
-        )
+        try:
+            self._model = WhisperModel(
+                config.model,
+                device=self._backend.value,
+                compute_type=config.compute_type,
+            )
+        except RuntimeError as exc:
+            if (
+                self._requested_backend is ComputeBackend.AUTO
+                and self._backend is ComputeBackend.CUDA
+            ):
+                self._backend = ComputeBackend.CPU
 
-    class ComputeBackendError(RuntimeError):
-        """Raised when the selected compute backend cannot be used."""
+                try:
+                    self._model = WhisperModel(
+                        config.model,
+                        device=ComputeBackend.CPU.value,
+                        compute_type=config.compute_type,
+                    )
+                except RuntimeError as cpu_exc:
+                    raise EngineConfigurationError(
+                        f"failed to initialize transcription engine: {cpu_exc}"
+                    ) from cpu_exc
+            else:
+                raise EngineConfigurationError(
+                    f"failed to initialize transcription engine: {exc}"
+                ) from exc
 
     @property
     def backend(self) -> ComputeBackend:
@@ -58,12 +81,12 @@ class FasterWhisperEngine:
                 audio_path,
                 language=self._config.language,
             )
-        except RuntimeError:
+        except RuntimeError as exc:
             if self._requested_backend is not ComputeBackend.AUTO:
-                raise
+                raise EngineTranscriptionError(f"transcription failed: {exc}") from exc
 
             if self._backend is not ComputeBackend.CUDA:
-                raise
+                raise EngineTranscriptionError(f"transcription failed: {exc}") from exc
 
             self._backend = ComputeBackend.CPU
 
@@ -73,10 +96,13 @@ class FasterWhisperEngine:
                 compute_type=self._config.compute_type,
             )
 
-            segments, info = self._model.transcribe(
-                audio_path,
-                language=self._config.language,
-            )
+            try:
+                segments, info = self._model.transcribe(
+                    audio_path,
+                    language=self._config.language,
+                )
+            except RuntimeError as exc:
+                raise EngineTranscriptionError(f"transcription failed: {exc}") from exc
 
         result_segments = []
 
