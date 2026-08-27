@@ -87,9 +87,13 @@ def test_engine_contract_returns_transcription_result(
 
     assert isinstance(result, TranscriptionResult)
     assert isinstance(result.language, str)
+    assert result.language.strip()
 
     for segment in result.segments:
         assert isinstance(segment, TranscriptionSegment)
+        assert segment.start >= 0
+        assert segment.end > segment.start
+        assert segment.text.strip()
 
 
 @pytest.mark.parametrize(
