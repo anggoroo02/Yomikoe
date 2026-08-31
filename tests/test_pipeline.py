@@ -113,6 +113,7 @@ def test_transcribe_audio_rejects_invalid_transcription_result(
             InvalidEngine(),
         )
 
+
 def test_transcribe_audio_rejects_invalid_processed_transcription(
     tmp_path: Path,
     spy_engine,

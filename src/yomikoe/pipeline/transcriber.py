@@ -40,7 +40,7 @@ def transcribe_audio(
 
     if processor is not None:
         transcription = processor.process(transcription)
-        
+
         if not isinstance(transcription, TranscriptionResult):
             raise TypeError("transcription must be a TranscriptionResult")
 
