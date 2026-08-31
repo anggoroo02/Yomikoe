@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from yomikoe.engines import TranscriptionProgress
 from yomikoe.pipeline import transcribe_audio
 from yomikoe.pipeline.transcriber import transcribe
@@ -89,3 +91,42 @@ def test_transcribe_returns_engine_result(
     assert result is spy_engine.result
     assert spy_engine.received_audio is not None
     assert spy_engine.received_audio["path"] == audio_file
+
+
+def test_transcribe_audio_rejects_invalid_transcription_result(
+    tmp_path: Path,
+) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    class InvalidEngine:
+        def transcribe(
+            self,
+            loaded_audio,
+            progress_callback=None,
+        ):
+            return object()
+
+    with pytest.raises(TypeError, match="transcription"):
+        transcribe_audio(
+            audio_file,
+            InvalidEngine(),
+        )
+
+def test_transcribe_audio_rejects_invalid_processed_transcription(
+    tmp_path: Path,
+    spy_engine,
+) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    class InvalidProcessor:
+        def process(self, transcription):
+            return object()
+
+    with pytest.raises(TypeError, match="transcription"):
+        transcribe_audio(
+            audio_file,
+            spy_engine,
+            processor=InvalidProcessor(),
+        )
