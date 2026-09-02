@@ -2,7 +2,11 @@ from pathlib import Path
 
 from yomikoe.engines import DummyTranscriptionEngine
 from yomikoe.pipeline import transcribe_audio
-from yomikoe.subtitle import generate_subtitle, write_srt
+from yomikoe.subtitle import (
+    generate_subtitle,
+    validate_srt_artifact,
+    write_srt,
+)
 
 
 def test_transcription_pipeline_generates_srt(tmp_path: Path) -> None:
@@ -26,6 +30,11 @@ def test_transcription_pipeline_generates_srt(tmp_path: Path) -> None:
 
     output_file = tmp_path / "sample.srt"
     output_file.write_text(srt, encoding="utf-8")
+
+    validate_srt_artifact(
+        output_file,
+        expected_cue_count=len(subtitle.cues),
+    )
 
     assert output_file.exists()
     assert output_file.read_text(encoding="utf-8") == srt
