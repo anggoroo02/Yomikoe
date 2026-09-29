@@ -7,6 +7,8 @@ from typer.testing import CliRunner
 from yomikoe.cli import app
 from yomikoe.engines import (
     ComputeBackend,
+    EngineConfigurationError,
+    EngineTranscriptionError,
     TranscriptionConfig,
     TranscriptionEngine,
     TranscriptionProgress,
@@ -94,6 +96,45 @@ def test_transcribe_rejects_unsupported_format(tmp_path: Path) -> None:
 
     assert result.exit_code == 1
     assert "Unsupported audio format: .txt" in result.stderr
+
+
+def test_transcribe_reports_transcription_error(tmp_path: Path) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    engine = make_engine()
+
+    with (
+        patch("yomikoe.cli.FasterWhisperEngine", return_value=engine),
+        patch(
+            "yomikoe.cli.transcribe_audio",
+            side_effect=EngineTranscriptionError("transcription failed"),
+        ),
+    ):
+        result = runner.invoke(
+            app,
+            ["transcribe", str(audio_file)],
+        )
+
+    assert result.exit_code == 1
+    assert "transcription failed" in result.stderr
+
+
+def test_transcribe_reports_configuration_error(tmp_path: Path) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    with patch(
+        "yomikoe.cli.FasterWhisperEngine",
+        side_effect=EngineConfigurationError("invalid engine configuration"),
+    ):
+        result = runner.invoke(
+            app,
+            ["transcribe", str(audio_file)],
+        )
+
+    assert result.exit_code == 1
+    assert "invalid engine configuration" in result.stderr
 
 
 def test_transcribe_writes_default_output(tmp_path: Path) -> None:
@@ -400,3 +441,26 @@ def test_transcribe_verbose_displays_progress_duration(
 
     assert result.exit_code == 0
     assert "Transcribing... 50% | 00:00:05 / 00:00:10" in result.stdout
+
+
+def test_transcribe_does_not_hide_unexpected_error(tmp_path: Path) -> None:
+    audio_file = tmp_path / "sample.mp3"
+    audio_file.write_bytes(b"dummy audio")
+
+    engine = make_engine()
+
+    with (
+        patch("yomikoe.cli.FasterWhisperEngine", return_value=engine),
+        patch(
+            "yomikoe.cli.transcribe_audio",
+            side_effect=RuntimeError("unexpected bug"),
+        ),
+    ):
+        result = runner.invoke(
+            app,
+            ["transcribe", str(audio_file)],
+        )
+
+    assert result.exit_code != 0
+    assert isinstance(result.exception, RuntimeError)
+    assert str(result.exception) == "unexpected bug"

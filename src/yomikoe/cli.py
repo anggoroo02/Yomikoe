@@ -6,6 +6,8 @@ from yomikoe import __version__
 from yomikoe.audio import UnsupportedAudioFormatError
 from yomikoe.engines import (
     ComputeBackend,
+    EngineConfigurationError,
+    EngineTranscriptionError,
     FasterWhisperEngine,
     TranscriptionConfig,
     TranscriptionProgress,
@@ -144,6 +146,10 @@ def transcribe(
             )
 
     except UnsupportedAudioFormatError as exc:
+        exit_with_error(str(exc))
+    except EngineConfigurationError as exc:
+        exit_with_error(str(exc))
+    except EngineTranscriptionError as exc:
         exit_with_error(str(exc))
 
     if progress_displayed:
