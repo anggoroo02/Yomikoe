@@ -13,6 +13,7 @@ from yomikoe.engines import (
 from yomikoe.pipeline import transcribe_audio
 from yomikoe.subtitle import (
     generate_subtitle,
+    validate_srt_artifact,
     write_srt,
 )
 
@@ -175,6 +176,15 @@ def transcribe(
             srt,
             encoding="utf-8",
         )
+        try:
+            validate_srt_artifact(
+                output_file,
+                expected_cue_count=len(subtitle.cues),
+            )
+        except ValueError as exc:
+            exit_with_error(
+                f"Error: Invalid subtitle artifact: {output_file}\nReason: {exc}"
+            )
     except OSError as exc:
         exit_with_error(
             f"Error: Could not write subtitle file: {output_file}\nReason: {exc}"

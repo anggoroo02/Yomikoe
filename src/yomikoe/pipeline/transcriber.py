@@ -35,8 +35,14 @@ def transcribe_audio(
         progress_callback=progress_callback,
     )
 
+    if not isinstance(transcription, TranscriptionResult):
+        raise TypeError("transcription must be a TranscriptionResult")
+
     if processor is not None:
         transcription = processor.process(transcription)
+
+        if not isinstance(transcription, TranscriptionResult):
+            raise TypeError("transcription must be a TranscriptionResult")
 
     return PipelineResult(
         audio=loaded_audio,

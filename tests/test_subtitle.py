@@ -1,7 +1,9 @@
+from pathlib import Path
+
 import pytest
 
 from yomikoe.engines import TranscriptionResult, TranscriptionSegment
-from yomikoe.subtitle import generate_subtitle, write_srt
+from yomikoe.subtitle import generate_subtitle, validate_srt_artifact, write_srt
 from yomikoe.subtitle.models import Subtitle, SubtitleCue
 from yomikoe.subtitle.writers.srt import format_timestamp
 
@@ -366,3 +368,16 @@ def test_format_timestamp_rounds_half_up(
 def test_format_timestamp_rejects_invalid_values(seconds: float) -> None:
     with pytest.raises(ValueError):
         format_timestamp(seconds)
+
+
+def test_validate_srt_artifact_accepts_valid_srt(tmp_path: Path) -> None:
+    output_file = tmp_path / "sample.srt"
+    output_file.write_text(
+        "1\n00:00:00,000 --> 00:00:01,500\nこんにちは\n",
+        encoding="utf-8",
+    )
+
+    validate_srt_artifact(
+        output_file,
+        expected_cue_count=1,
+    )
